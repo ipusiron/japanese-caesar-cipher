@@ -44,13 +44,26 @@
   <select id="order">
     <option value="aiueo">あいうえお順</option>
     <option value="iroha">いろは順</option>
-  </select><br>
+    <option value="custom">任意</option>
+  </select>
+  <div id="customOrderContainer" style="display: none; margin-left: 1em; margin-top: 0.5em;">
+    <label for="customOrder">文字順序:</label>
+    <input type="text" id="customOrder" placeholder="例: あかさたなはまやらわ" style="width: 300px;">
+    <small style="display: block; color: #666; margin-top: 0.2em;">
+      使用したい文字を重複なく並べて入力してください
+    </small>
+  </div><br>
 
   <label for="key">鍵（シフト数）:</label>
   <input type="number" id="key" value="3" min="0" max="49"><br>
 
   <label for="input">入力（複数行可）:</label><br>
-  <textarea id="input" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea><br>
+  <textarea id="input" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea>
+  <div id="inputStats" style="font-size: 0.9em; color: #666; margin-top: 0.2em;">
+    総文字数: <span id="totalChars">0</span> | 
+    変換対象: <span id="targetChars">0</span> | 
+    変換対象外: <span id="otherChars">0</span>
+  </div><br>
 
   <button id="processBtn">実行</button><br>
 
@@ -67,7 +80,7 @@
     
     /**
      * @typedef {'encrypt' | 'decrypt'} CipherMode
-     * @typedef {'aiueo' | 'iroha'} CharacterOrder
+     * @typedef {'aiueo' | 'iroha' | 'custom'} CharacterOrder
      */
 
     /**
@@ -91,6 +104,8 @@
       constructor() {
         this.elements = this.initializeElements();
         this.setupEventListeners();
+        this.toggleCustomOrderInput(); // 初期状態を設定
+        this.updateCharacterCount(); // 初期文字数カウンターを設定
         this.updateTableOnInput();
       }
 
@@ -116,7 +131,12 @@
           output: getElement('output'),
           processBtn: getElement('processBtn'),
           mappingTable: getElement('mappingTable'),
-          errorMessage: getElement('errorMessage')
+          errorMessage: getElement('errorMessage'),
+          customOrderContainer: getElement('customOrderContainer'),
+          customOrder: getElement('customOrder'),
+          totalChars: getElement('totalChars'),
+          targetChars: getElement('targetChars'),
+          otherChars: getElement('otherChars')
         };
       }
 
@@ -126,9 +146,16 @@
        */
       setupEventListeners() {
         this.elements.mode.addEventListener('change', () => this.updateTableOnInput());
-        this.elements.order.addEventListener('change', () => this.updateTableOnInput());
+        this.elements.order.addEventListener('change', () => {
+          this.toggleCustomOrderInput();
+          this.updateTableOnInput();
+        });
         this.elements.key.addEventListener('input', () => this.updateTableOnInput());
+        this.elements.customOrder.addEventListener('input', () => this.updateTableOnInput());
         this.elements.processBtn.addEventListener('click', () => this.processText());
+        
+        // 入力テキストの変更時に文字数カウンターを更新
+        this.elements.input.addEventListener('input', () => this.updateCharacterCount());
         
         // Enterキーでも実行可能
         this.elements.input.addEventListener('keydown', (e) => {
@@ -139,13 +166,76 @@
       }
 
       /**
+       * 文字数カウンターを更新
+       * @private
+       */
+      updateCharacterCount() {
+        const inputText = this.elements.input.value;
+        const order = this.elements.order.value;
+        const characterArray = this.getCharacterArray(order);
+        
+        const stats = this.getTextStatistics(inputText, characterArray);
+        
+        this.elements.totalChars.textContent = stats.totalChars.toString();
+        this.elements.targetChars.textContent = stats.targetChars.toString();
+        this.elements.otherChars.textContent = stats.otherChars.toString();
+      }
+
+      /**
+       * カスタム文字順序入力欄の表示/非表示を切り替え
+       * @private
+       */
+      toggleCustomOrderInput() {
+        const isCustom = this.elements.order.value === 'custom';
+        this.elements.customOrderContainer.style.display = isCustom ? 'block' : 'none';
+        // カスタム順序の変更時にも文字数カウンターを更新
+        this.updateCharacterCount();
+      }
+
+      /**
        * 文字配列を取得
        * @param {CharacterOrder} order - 文字の並び順
-       * @returns {readonly string[]} 文字配列
+       * @returns {readonly string[] | string[]} 文字配列
        * @private
        */
       getCharacterArray(order) {
+        if (order === 'custom') {
+          return [...this.elements.customOrder.value];
+        }
         return order === 'aiueo' ? JapaneseCaesarCipher.AIUEO : JapaneseCaesarCipher.IROHA;
+      }
+
+      /**
+       * カスタム文字順序を検証
+       * @param {string} customOrder - カスタム文字順序
+       * @returns {boolean} 検証結果
+       * @private
+       */
+      validateCustomOrder(customOrder) {
+        if (!customOrder || customOrder.length === 0) {
+          this.showError('カスタム文字順序が入力されていません。');
+          return false;
+        }
+
+        if (customOrder.length < 2) {
+          this.showError('カスタム文字順序は2文字以上である必要があります。');
+          return false;
+        }
+
+        // 重複文字チェック
+        const uniqueChars = new Set([...customOrder]);
+        if (uniqueChars.size !== customOrder.length) {
+          this.showError('カスタム文字順序に重複した文字が含まれています。');
+          return false;
+        }
+
+        // 空白文字チェック
+        if (customOrder.includes(' ') || customOrder.includes('　')) {
+          this.showError('カスタム文字順序に空白文字は使用できません。');
+          return false;
+        }
+
+        return true;
       }
 
       /**
@@ -155,6 +245,7 @@
        */
       validateInput() {
         const key = parseInt(this.elements.key.value);
+        const order = this.elements.order.value;
         
         if (isNaN(key)) {
           this.showError('鍵（シフト数）は数値である必要があります。');
@@ -166,9 +257,21 @@
           return false;
         }
 
-        if (key > 49) {
-          this.showError('鍵（シフト数）は49以下である必要があります。');
-          return false;
+        // カスタム順序の場合は動的に最大値を設定
+        if (order === 'custom') {
+          if (!this.validateCustomOrder(this.elements.customOrder.value)) {
+            return false;
+          }
+          const maxKey = this.elements.customOrder.value.length - 1;
+          if (key > maxKey) {
+            this.showError(`カスタム文字順序の場合、鍵（シフト数）は${maxKey}以下である必要があります。`);
+            return false;
+          }
+        } else {
+          if (key > 49) {
+            this.showError('鍵（シフト数）は49以下である必要があります。');
+            return false;
+          }
         }
 
         this.clearError();
@@ -277,18 +380,25 @@
       /**
        * 統計情報を取得
        * @param {string} text - 分析対象テキスト
+       * @param {string[]} characterSet - 使用文字セット
        * @returns {Object} 統計情報
        */
-      getTextStatistics(text) {
-        const hiraganaCount = [...text].filter(char => 
-          JapaneseCaesarCipher.AIUEO.includes(char) || 
-          JapaneseCaesarCipher.IROHA.includes(char)
+      getTextStatistics(text, characterSet = null) {
+        const defaultCharacterSet = [
+          ...JapaneseCaesarCipher.AIUEO, 
+          ...JapaneseCaesarCipher.IROHA
+        ];
+        
+        const targetCharacterSet = characterSet || defaultCharacterSet;
+        const targetCount = [...text].filter(char => 
+          targetCharacterSet.includes(char)
         ).length;
         
         return {
           totalChars: text.length,
-          hiraganaChars: hiraganaCount,
-          otherChars: text.length - hiraganaCount
+          targetChars: targetCount,
+          otherChars: text.length - targetCount,
+          characterSetSize: targetCharacterSet.length
         };
       }
     }
