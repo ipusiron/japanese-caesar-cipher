@@ -39,4 +39,4 @@ Webベースで動作します。
 
 ## 📜 ライセンス
 
-MIT Licens
+[MIT Licens](./LICENSE)
