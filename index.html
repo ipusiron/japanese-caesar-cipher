@@ -31,19 +31,19 @@
   <h1>日本語シーザー暗号ツール</h1>
 
   <label for="mode">モード:</label>
-  <select id="mode">
+  <select id="mode" onchange="updateTableOnInput()">
     <option value="encrypt">暗号化</option>
     <option value="decrypt">復号</option>
   </select><br>
 
   <label for="order">並び順:</label>
-  <select id="order">
+  <select id="order" onchange="updateTableOnInput()">
     <option value="aiueo">あいうえお順</option>
     <option value="iroha">いろは順</option>
   </select><br>
 
   <label for="key">鍵（シフト数）:</label>
-  <input type="number" id="key" value="3"><br>
+  <input type="number" id="key" value="3" oninput="updateTableOnInput()"><br>
 
   <label for="input">入力（複数行可）:</label><br>
   <textarea id="input"></textarea><br>
@@ -89,7 +89,20 @@
         table.innerHTML += row;
       });
     }
+
+    function updateTableOnInput() {
+      const mode = document.getElementById('mode').value;
+      const order = document.getElementById('order').value;
+      const key = parseInt(document.getElementById('key').value);
+      if (!isNaN(key)) {
+        const base = order === 'aiueo' ? aiueo : iroha;
+        updateTable(base, key, mode);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateTableOnInput();
+    });
   </script>
 </body>
 </html>
-
