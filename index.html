@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>日本語シーザー暗号</title>
+  <title>日本語シーザー暗号（Japanese Caesar Cipher）</title>
   <style>
     body {
       font-family: sans-serif;
@@ -28,7 +28,7 @@
   </style>
 </head>
 <body>
-  <h1>日本語シーザー暗号ツール</h1>
+  <h1>日本語シーザー暗号ツール（Japanese Caesar Cipher）</h1>
 
   <label for="mode">モード:</label>
   <select id="mode" onchange="updateTableOnInput()">
@@ -53,7 +53,7 @@
   <label for="output">出力:</label><br>
   <textarea id="output" readonly></textarea>
 
-  <h2>対応表</h2>
+  <h2>暗号表（対応表）</h2>
   <table id="mappingTable"></table>
 
   <script>
@@ -81,7 +81,7 @@
 
     function updateTable(base, key, mode) {
       const table = document.getElementById('mappingTable');
-      table.innerHTML = '<tr><th>平文</th><th>暗号文</th></tr>';
+      table.innerHTML = '<tr><th>平文文字</th><th>暗号文文字</th></tr>';
       base.forEach((ch, i) => {
         const shift = mode === 'encrypt' ? key : -key;
         const mapped = base[(i + shift + base.length) % base.length];
