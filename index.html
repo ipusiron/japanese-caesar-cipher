@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>日本語シーザー暗号（Japanese Caesar Cipher）</title>
+  <title>日本語シーザー暗号（Japanese Caesar Cipher）- TypeScript版</title>
   <style>
     body {
       font-family: sans-serif;
@@ -25,84 +25,285 @@
       border: 1px solid #ccc;
       padding: 4px 8px;
     }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>日本語シーザー暗号ツール（Japanese Caesar Cipher）</h1>
+  <h1>日本語シーザー暗号ツール（Japanese Caesar Cipher）- TypeScript版</h1>
 
   <label for="mode">モード:</label>
-  <select id="mode" onchange="updateTableOnInput()">
+  <select id="mode">
     <option value="encrypt">暗号化</option>
     <option value="decrypt">復号</option>
   </select><br>
 
   <label for="order">並び順:</label>
-  <select id="order" onchange="updateTableOnInput()">
+  <select id="order">
     <option value="aiueo">あいうえお順</option>
     <option value="iroha">いろは順</option>
   </select><br>
 
   <label for="key">鍵（シフト数）:</label>
-  <input type="number" id="key" value="3" oninput="updateTableOnInput()"><br>
+  <input type="number" id="key" value="3" min="0" max="49"><br>
 
   <label for="input">入力（複数行可）:</label><br>
-  <textarea id="input"></textarea><br>
+  <textarea id="input" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea><br>
 
-  <button onclick="processText()">実行</button><br>
+  <button id="processBtn">実行</button><br>
 
   <label for="output">出力:</label><br>
   <textarea id="output" readonly></textarea>
 
+  <div id="errorMessage" class="error"></div>
+
   <h2>暗号表（対応表）</h2>
   <table id="mappingTable"></table>
 
-  <script>
-    const aiueo = [..."あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん"];
-    const iroha = [..."いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせすん"];
+  <script type="module">
+    // TypeScriptの型定義（JSDocコメントで型情報を表現）
+    
+    /**
+     * @typedef {'encrypt' | 'decrypt'} CipherMode
+     * @typedef {'aiueo' | 'iroha'} CharacterOrder
+     */
 
-    function processText() {
-      const mode = document.getElementById('mode').value;
-      const order = document.getElementById('order').value;
-      const key = parseInt(document.getElementById('key').value);
-      const input = document.getElementById('input').value;
+    /**
+     * 日本語シーザー暗号クラス
+     */
+    class JapaneseCaesarCipher {
+      /**
+       * @type {readonly string[]}
+       */
+      static AIUEO = Object.freeze([..."あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん"]);
+      
+      /**
+       * @type {readonly string[]}
+       */
+      static IROHA = Object.freeze([..."いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせすん"]);
 
-      const base = order === 'aiueo' ? aiueo : iroha;
-      const output = [...input].map(ch => {
-        const index = base.indexOf(ch);
-        if (index === -1) return ch;
-        const shift = mode === 'encrypt' ? key : -key;
+      /**
+       * DOM要素の参照
+       * @private
+       */
+      constructor() {
+        this.elements = this.initializeElements();
+        this.setupEventListeners();
+        this.updateTableOnInput();
+      }
+
+      /**
+       * DOM要素を初期化
+       * @returns {Object} DOM要素のオブジェクト
+       * @private
+       */
+      initializeElements() {
+        const getElement = (id) => {
+          const element = document.getElementById(id);
+          if (!element) {
+            throw new Error(`Element with ID '${id}' not found`);
+          }
+          return element;
+        };
+
+        return {
+          mode: getElement('mode'),
+          order: getElement('order'),
+          key: getElement('key'),
+          input: getElement('input'),
+          output: getElement('output'),
+          processBtn: getElement('processBtn'),
+          mappingTable: getElement('mappingTable'),
+          errorMessage: getElement('errorMessage')
+        };
+      }
+
+      /**
+       * イベントリスナーを設定
+       * @private
+       */
+      setupEventListeners() {
+        this.elements.mode.addEventListener('change', () => this.updateTableOnInput());
+        this.elements.order.addEventListener('change', () => this.updateTableOnInput());
+        this.elements.key.addEventListener('input', () => this.updateTableOnInput());
+        this.elements.processBtn.addEventListener('click', () => this.processText());
+        
+        // Enterキーでも実行可能
+        this.elements.input.addEventListener('keydown', (e) => {
+          if (e.ctrlKey && e.key === 'Enter') {
+            this.processText();
+          }
+        });
+      }
+
+      /**
+       * 文字配列を取得
+       * @param {CharacterOrder} order - 文字の並び順
+       * @returns {readonly string[]} 文字配列
+       * @private
+       */
+      getCharacterArray(order) {
+        return order === 'aiueo' ? JapaneseCaesarCipher.AIUEO : JapaneseCaesarCipher.IROHA;
+      }
+
+      /**
+       * 入力値を検証
+       * @returns {boolean} 検証結果
+       * @private
+       */
+      validateInput() {
+        const key = parseInt(this.elements.key.value);
+        
+        if (isNaN(key)) {
+          this.showError('鍵（シフト数）は数値である必要があります。');
+          return false;
+        }
+
+        if (key < 0) {
+          this.showError('鍵（シフト数）は0以上である必要があります。');
+          return false;
+        }
+
+        if (key > 49) {
+          this.showError('鍵（シフト数）は49以下である必要があります。');
+          return false;
+        }
+
+        this.clearError();
+        return true;
+      }
+
+      /**
+       * エラーメッセージを表示
+       * @param {string} message - エラーメッセージ
+       * @private
+       */
+      showError(message) {
+        this.elements.errorMessage.textContent = message;
+      }
+
+      /**
+       * エラーメッセージをクリア
+       * @private
+       */
+      clearError() {
+        this.elements.errorMessage.textContent = '';
+      }
+
+      /**
+       * 文字を暗号化/復号
+       * @param {string} char - 対象文字
+       * @param {readonly string[]} base - 文字配列
+       * @param {number} shift - シフト数
+       * @returns {string} 変換後の文字
+       * @private
+       */
+      transformCharacter(char, base, shift) {
+        const index = base.indexOf(char);
+        if (index === -1) return char;
+        
         const newIndex = (index + shift + base.length) % base.length;
         return base[newIndex];
-      }).join('');
+      }
 
-      document.getElementById('output').value = output;
-      updateTable(base, key, mode);
-    }
+      /**
+       * テキストを処理（暗号化/復号）
+       */
+      processText() {
+        if (!this.validateInput()) return;
 
-    function updateTable(base, key, mode) {
-      const table = document.getElementById('mappingTable');
-      table.innerHTML = '<tr><th>平文文字</th><th>暗号文文字</th></tr>';
-      base.forEach((ch, i) => {
+        try {
+          const mode = this.elements.mode.value;
+          const order = this.elements.order.value;
+          const key = parseInt(this.elements.key.value);
+          const input = this.elements.input.value;
+
+          const base = this.getCharacterArray(order);
+          const shift = mode === 'encrypt' ? key : -key;
+          
+          const output = [...input]
+            .map(char => this.transformCharacter(char, base, shift))
+            .join('');
+
+          this.elements.output.value = output;
+          this.updateTable(base, key, mode);
+          
+          // 処理成功のフィードバック
+          this.elements.processBtn.textContent = '完了!';
+          setTimeout(() => {
+            this.elements.processBtn.textContent = '実行';
+          }, 1000);
+
+        } catch (error) {
+          this.showError(`処理中にエラーが発生しました: ${error.message}`);
+        }
+      }
+
+      /**
+       * 対応表を更新
+       * @param {readonly string[]} base - 文字配列
+       * @param {number} key - 鍵
+       * @param {CipherMode} mode - モード
+       * @private
+       */
+      updateTable(base, key, mode) {
         const shift = mode === 'encrypt' ? key : -key;
-        const mapped = base[(i + shift + base.length) % base.length];
-        const row = `<tr><td>${ch}</td><td>${mapped}</td></tr>`;
-        table.innerHTML += row;
-      });
-    }
+        
+        const headerRow = '<tr><th>平文文字</th><th>暗号文文字</th></tr>';
+        const rows = base.map((char, index) => {
+          const mappedChar = this.transformCharacter(char, base, shift);
+          return `<tr><td>${char}</td><td>${mappedChar}</td></tr>`;
+        }).join('');
 
-    function updateTableOnInput() {
-      const mode = document.getElementById('mode').value;
-      const order = document.getElementById('order').value;
-      const key = parseInt(document.getElementById('key').value);
-      if (!isNaN(key)) {
-        const base = order === 'aiueo' ? aiueo : iroha;
-        updateTable(base, key, mode);
+        this.elements.mappingTable.innerHTML = headerRow + rows;
+      }
+
+      /**
+       * 入力変更時のテーブル更新
+       */
+      updateTableOnInput() {
+        if (!this.validateInput()) return;
+
+        const mode = this.elements.mode.value;
+        const order = this.elements.order.value;
+        const key = parseInt(this.elements.key.value);
+        
+        const base = this.getCharacterArray(order);
+        this.updateTable(base, key, mode);
+      }
+
+      /**
+       * 統計情報を取得
+       * @param {string} text - 分析対象テキスト
+       * @returns {Object} 統計情報
+       */
+      getTextStatistics(text) {
+        const hiraganaCount = [...text].filter(char => 
+          JapaneseCaesarCipher.AIUEO.includes(char) || 
+          JapaneseCaesarCipher.IROHA.includes(char)
+        ).length;
+        
+        return {
+          totalChars: text.length,
+          hiraganaChars: hiraganaCount,
+          otherChars: text.length - hiraganaCount
+        };
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      updateTableOnInput();
+    // アプリケーション初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        new JapaneseCaesarCipher();
+        console.log('日本語シーザー暗号ツール（TypeScript版）が初期化されました。');
+      } catch (error) {
+        console.error('初期化エラー:', error);
+        document.body.innerHTML = `<h1>エラー</h1><p>アプリケーションの初期化に失敗しました: ${error.message}</p>`;
+      }
     });
   </script>
 </body>
 </html>
+<!-- End of index.html -->
