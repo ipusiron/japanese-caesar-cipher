@@ -352,6 +352,15 @@
         </table>
       </div>
     </div>
+
+    <!-- セキュリティ注意書き -->
+    <div class="card full-width-card">
+      <div class="security-notice">
+        <strong>🔒 セキュリティに関する注意:</strong>
+        このツールは教育・学習目的で作成されています。重要な機密情報の保護には使用しないでください。
+        古典暗号は現代の暗号学的標準を満たしておらず、容易に解読される可能性があります。
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -386,6 +395,153 @@
         this.toggleCustomOrderInput(); // 初期状態を設定
         this.updateCharacterCount(); // 初期文字数カウンターを設定
         this.updateTableOnInput();
+      }
+
+      /**
+       * 入力値をサニタイズ
+       * @param {string} input - サニタイズ対象の文字列
+       * @param {Object} options - サニタイズオプション
+       * @returns {string} サニタイズ済み文字列
+       * @private
+       */
+      sanitizeInput(input, options = {}) {
+        if (typeof input !== 'string') {
+          return '';
+        }
+
+        const {
+          allowHTML = false,
+          maxLength = 10000,
+          allowedChars = null,
+          trimWhitespace = true
+        } = options;
+
+        let sanitized = input;
+
+        // 長さ制限
+        if (sanitized.length > maxLength) {
+          sanitized = sanitized.substring(0, maxLength);
+          this.showWarning(`入力が${maxLength}文字に制限されました。`);
+        }
+
+        // 前後の空白文字を削除
+        if (trimWhitespace) {
+          sanitized = sanitized.trim();
+        }
+
+        // HTMLタグのエスケープ
+        if (!allowHTML) {
+          sanitized = sanitized
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;')
+            .replace(/\//g, '&#x2F;');
+        }
+
+        // 危険なスクリプト関連文字列の除去
+        const dangerousPatterns = [
+          /javascript:/gi,
+          /data:/gi,
+          /vbscript:/gi,
+          /on\w+\s*=/gi,
+          /<script/gi,
+          /<\/script>/gi,
+          /<iframe/gi,
+          /<object/gi,
+          /<embed/gi,
+          /<link/gi,
+          /<meta/gi
+        ];
+
+        dangerousPatterns.forEach(pattern => {
+          if (pattern.test(sanitized)) {
+            sanitized = sanitized.replace(pattern, '');
+            this.showWarning('潜在的に危険な内容が除去されました。');
+          }
+        });
+
+        // 特定文字のみ許可（カスタム文字順序用）
+        if (allowedChars) {
+          const allowedSet = new Set(allowedChars);
+          sanitized = [...sanitized].filter(char => allowedSet.has(char)).join('');
+        }
+
+        // 制御文字の除去（タブ、改行、通常の空白は保持）
+        sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+        return sanitized;
+      }
+
+      /**
+       * 警告メッセージを表示
+       * @param {string} message - 警告メッセージ
+       * @private
+       */
+      showWarning(message) {
+        // 既存の警告を削除
+        const existingWarning = document.getElementById('warning-message');
+        if (existingWarning) {
+          existingWarning.remove();
+        }
+
+        // 警告メッセージを作成
+        const warningDiv = document.createElement('div');
+        warningDiv.id = 'warning-message';
+        warningDiv.className = 'warning';
+        warningDiv.textContent = `⚠️ ${message}`;
+        warningDiv.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #fff3cd;
+          color: #856404;
+          border: 1px solid #ffeaa7;
+          padding: 12px 16px;
+          border-radius: 6px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          z-index: 1000;
+          max-width: 300px;
+          font-size: 14px;
+          animation: slideIn 0.3s ease-out;
+        `;
+
+        document.body.appendChild(warningDiv);
+
+        // 5秒後に自動削除
+        setTimeout(() => {
+          if (warningDiv.parentNode) {
+            warningDiv.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => warningDiv.remove(), 300);
+          }
+        }, 5000);
+      }
+
+      /**
+       * 安全にDOM要素にテキストを設定
+       * @param {HTMLElement} element - 対象要素
+       * @param {string} text - 設定するテキスト
+       * @private
+       */
+      safeSetText(element, text) {
+        if (!element) return;
+        
+        const sanitizedText = this.sanitizeInput(text, { maxLength: 50000 });
+        element.textContent = sanitizedText;
+      }
+
+      /**
+       * 安全にDOM要素に値を設定
+       * @param {HTMLElement} element - 対象要素
+       * @param {string} value - 設定する値
+       * @private
+       */
+      safeSetValue(element, value) {
+        if (!element) return;
+        
+        const sanitizedValue = this.sanitizeInput(value, { maxLength: 50000 });
+        element.value = sanitizedValue;
       }
 
       /**
@@ -452,15 +608,24 @@
        * @private
        */
       updateCharacterCount() {
-        const inputText = this.elements.input.value;
+        const inputText = this.sanitizeInput(this.elements.input.value, {
+          maxLength: 100000,
+          trimWhitespace: false
+        });
+        
+        // サニタイズ後の値をフィールドに戻す（必要な場合のみ）
+        if (inputText !== this.elements.input.value) {
+          this.safeSetValue(this.elements.input, inputText);
+        }
+        
         const order = this.elements.order.value;
         const characterArray = this.getCharacterArray(order);
         
         const stats = this.getTextStatistics(inputText, characterArray);
         
-        this.elements.totalChars.textContent = stats.totalChars.toString();
-        this.elements.targetChars.textContent = stats.targetChars.toString();
-        this.elements.otherChars.textContent = stats.otherChars.toString();
+        this.safeSetText(this.elements.totalChars, stats.totalChars.toString());
+        this.safeSetText(this.elements.targetChars, stats.targetChars.toString());
+        this.safeSetText(this.elements.otherChars, stats.otherChars.toString());
       }
 
       /**
@@ -482,7 +647,18 @@
        */
       getCharacterArray(order) {
         if (order === 'custom') {
-          return [...this.elements.customOrder.value];
+          const sanitizedOrder = this.sanitizeInput(this.elements.customOrder.value, {
+            maxLength: 1000,
+            allowedChars: null,
+            trimWhitespace: true
+          });
+          
+          // サニタイズ後の値をフィールドに戻す（必要な場合のみ）
+          if (sanitizedOrder !== this.elements.customOrder.value) {
+            this.safeSetValue(this.elements.customOrder, sanitizedOrder);
+          }
+          
+          return [...sanitizedOrder];
         }
         return order === 'aiueo' ? JapaneseCaesarCipher.AIUEO : JapaneseCaesarCipher.IROHA;
       }
@@ -494,26 +670,38 @@
        * @private
        */
       validateCustomOrder(customOrder) {
-        if (!customOrder || customOrder.length === 0) {
+        // 入力値をサニタイズ
+        const sanitizedOrder = this.sanitizeInput(customOrder, {
+          maxLength: 1000,
+          trimWhitespace: true
+        });
+
+        if (!sanitizedOrder || sanitizedOrder.length === 0) {
           this.showError('カスタム文字順序が入力されていません。');
           return false;
         }
 
-        if (customOrder.length < 2) {
+        if (sanitizedOrder.length < 2) {
           this.showError('カスタム文字順序は2文字以上である必要があります。');
           return false;
         }
 
         // 重複文字チェック
-        const uniqueChars = new Set([...customOrder]);
-        if (uniqueChars.size !== customOrder.length) {
+        const uniqueChars = new Set([...sanitizedOrder]);
+        if (uniqueChars.size !== sanitizedOrder.length) {
           this.showError('カスタム文字順序に重複した文字が含まれています。');
           return false;
         }
 
         // 空白文字チェック
-        if (customOrder.includes(' ') || customOrder.includes('　')) {
+        if (sanitizedOrder.includes(' ') || sanitizedOrder.includes('　')) {
           this.showError('カスタム文字順序に空白文字は使用できません。');
+          return false;
+        }
+
+        // 制御文字チェック
+        if (/[\x00-\x1F\x7F]/.test(sanitizedOrder)) {
+          this.showError('カスタム文字順序に制御文字が含まれています。');
           return false;
         }
 
@@ -652,12 +840,31 @@
         const shift = mode === 'encrypt' ? key : -key;
         const tbody = this.elements.mappingTable.querySelector('tbody');
         
+        // テーブル内容を安全に生成
         const rows = base.map((char, index) => {
-          const mappedChar = this.transformCharacter(char, base, shift);
-          return `<tr><td>${char}</td><td>${mappedChar}</td></tr>`;
-        }).join('');
+          const originalChar = this.sanitizeInput(char, { maxLength: 10 });
+          const mappedChar = this.sanitizeInput(
+            this.transformCharacter(originalChar, base, shift), 
+            { maxLength: 10 }
+          );
+          
+          // HTMLエスケープ済みの安全な文字列として挿入
+          const row = document.createElement('tr');
+          const originalCell = document.createElement('td');
+          const mappedCell = document.createElement('td');
+          
+          this.safeSetText(originalCell, originalChar);
+          this.safeSetText(mappedCell, mappedChar);
+          
+          row.appendChild(originalCell);
+          row.appendChild(mappedCell);
+          
+          return row;
+        });
 
-        tbody.innerHTML = rows;
+        // tbodyをクリアして新しい行を追加
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
       }
 
       /**
@@ -713,4 +920,4 @@
   </script>
 </body>
 </html>
-<!-- End of index.html -->
+  
