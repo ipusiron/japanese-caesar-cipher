@@ -4,76 +4,355 @@
   <meta charset="UTF-8">
   <title>日本語シーザー暗号（Japanese Caesar Cipher）</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 2em;
-      background-color: #f5f5f5;
+    :root {
+      --primary: #2c5aa0;
+      --primary-light: #4a7bc8;
+      --secondary: #f8f9fa;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --white: #ffffff;
+      --gray-100: #f8f9fa;
+      --gray-200: #e9ecef;
+      --gray-300: #dee2e6;
+      --gray-600: #6c757d;
+      --gray-800: #343a40;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
+      --border-radius: 8px;
     }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 2em;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header-card {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 2em;
+      margin-bottom: 2em;
+      text-align: center;
+      border-top: 4px solid var(--primary);
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--gray-800);
+      font-size: 2em;
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2em;
+      margin-bottom: 2em;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 1.5em;
+      transition: box-shadow 0.3s ease, transform 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      font-size: 1.2em;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1em;
+      padding-bottom: 0.5em;
+      border-bottom: 2px solid var(--gray-200);
+    }
+
+    .form-group {
+      margin-bottom: 1em;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: 500;
+      color: var(--gray-800);
+    }
+
+    select, input, button {
+      width: 100%;
+      padding: 0.75em;
+      border: 2px solid var(--gray-300);
+      border-radius: 6px;
+      font-size: 1em;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    }
+
     textarea {
       width: 100%;
-      height: 120px;
+      min-height: 120px;
+      padding: 0.75em;
+      border: 2px solid var(--gray-300);
+      border-radius: 6px;
+      font-size: 1em;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    select, input, button {
-      margin: 0.5em 0;
-      padding: 0.5em;
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
     }
+
+    button {
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: var(--primary-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .custom-order-container {
+      background: var(--gray-100);
+      border-radius: 6px;
+      padding: 1em;
+      margin-top: 0.5em;
+      border-left: 4px solid var(--primary);
+    }
+
+    .stats-container {
+      background: var(--gray-100);
+      border-radius: 6px;
+      padding: 0.75em;
+      margin-top: 0.5em;
+      font-size: 0.9em;
+      color: var(--gray-600);
+      border: 1px solid var(--gray-300);
+    }
+
+    .stat-item {
+      display: inline-block;
+      margin-right: 1em;
+      padding: 0.25em 0.5em;
+      background: var(--white);
+      border-radius: 4px;
+      border: 1px solid var(--gray-300);
+    }
+
+    .stat-number {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .full-width-card {
+      grid-column: 1 / -1;
+    }
+
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--gray-300);
+      border-radius: 6px;
+    }
+
     table {
+      width: 100%;
       border-collapse: collapse;
-      margin-top: 1em;
+      margin: 0;
     }
+
     th, td {
-      border: 1px solid #ccc;
-      padding: 4px 8px;
+      padding: 0.75em;
+      text-align: center;
+      border-bottom: 1px solid var(--gray-200);
     }
+
+    th {
+      background: var(--primary);
+      color: var(--white);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    tr:hover {
+      background: var(--gray-100);
+    }
+
     .error {
-      color: red;
-      font-weight: bold;
+      color: var(--danger);
+      font-weight: 600;
+      padding: 0.75em;
+      background: rgba(220, 53, 69, 0.1);
+      border: 1px solid var(--danger);
+      border-radius: 6px;
+      margin-top: 0.5em;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1em;
+      }
+      
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 1em;
+      }
+      
+      .header-card {
+        padding: 1.5em;
+      }
+      
+      h1 {
+        font-size: 1.5em;
+      }
+    }
+
+    /* 読み込み状態のアニメーション */
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .processing {
+      animation: pulse 1s infinite;
     }
   </style>
 </head>
 <body>
-  <h1>日本語シーザー暗号ツール（Japanese Caesar Cipher）</h1>
+  <div class="container">
+    <!-- ヘッダーカード -->
+    <div class="header-card">
+      <h1>日本語シーザー暗号ツール（Japanese Caesar Cipher）</h1>
+    </div>
 
-  <label for="mode">モード:</label>
-  <select id="mode">
-    <option value="encrypt">暗号化</option>
-    <option value="decrypt">復号</option>
-  </select><br>
+    <!-- メイングリッド -->
+    <div class="grid">
+      <!-- 設定カード -->
+      <div class="card">
+        <div class="card-header">⚙️ 設定</div>
+        
+        <div class="form-group">
+          <label for="mode">モード:</label>
+          <select id="mode">
+            <option value="encrypt">🔒 暗号化</option>
+            <option value="decrypt">🔓 復号</option>
+          </select>
+        </div>
 
-  <label for="order">並び順:</label>
-  <select id="order">
-    <option value="aiueo">あいうえお順</option>
-    <option value="iroha">いろは順</option>
-    <option value="custom">任意</option>
-  </select>
-  <div id="customOrderContainer" style="display: none; margin-left: 1em; margin-top: 0.5em;">
-    <label for="customOrder">文字順序:</label>
-    <input type="text" id="customOrder" placeholder="例: あかさたなはまやらわ" style="width: 300px;">
-    <small style="display: block; color: #666; margin-top: 0.2em;">
-      使用したい文字を重複なく並べて入力してください
-    </small>
-  </div><br>
+        <div class="form-group">
+          <label for="order">並び順:</label>
+          <select id="order">
+            <option value="aiueo">あいうえお順</option>
+            <option value="iroha">いろは順</option>
+            <option value="custom">任意</option>
+          </select>
+          
+          <div id="customOrderContainer" class="custom-order-container" style="display: none;">
+            <label for="customOrder">文字順序:</label>
+            <input type="text" id="customOrder" placeholder="例: あかさたなはまやらわ">
+            <small style="display: block; color: #6c757d; margin-top: 0.5em;">
+              使用したい文字を重複なく並べて入力してください
+            </small>
+          </div>
+        </div>
 
-  <label for="key">鍵（シフト数）:</label>
-  <input type="number" id="key" value="3" min="0" max="49"><br>
+        <div class="form-group">
+          <label for="key">鍵（シフト数）:</label>
+          <input type="number" id="key" value="3" min="0" max="49">
+        </div>
+      </div>
 
-  <label for="input">入力（複数行可）:</label><br>
-  <textarea id="input" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea>
-  <div id="inputStats" style="font-size: 0.9em; color: #666; margin-top: 0.2em;">
-    総文字数: <span id="totalChars">0</span> | 
-    変換対象: <span id="targetChars">0</span> | 
-    変換対象外: <span id="otherChars">0</span>
-  </div><br>
+      <!-- 入力カード -->
+      <div class="card">
+        <div class="card-header">📝 入力</div>
+        
+        <div class="form-group">
+          <label for="input">入力テキスト（複数行可）:</label>
+          <textarea id="input" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea>
+          
+          <div class="stats-container">
+            <span class="stat-item">総文字数: <span class="stat-number" id="totalChars">0</span></span>
+            <span class="stat-item">変換対象: <span class="stat-number" id="targetChars">0</span></span>
+            <span class="stat-item">変換対象外: <span class="stat-number" id="otherChars">0</span></span>
+          </div>
+        </div>
 
-  <button id="processBtn">実行</button><br>
+        <button id="processBtn">🚀 実行</button>
+        
+        <div id="errorMessage" class="error" style="display: none;"></div>
+      </div>
+    </div>
 
-  <label for="output">出力:</label><br>
-  <textarea id="output" readonly></textarea>
+    <!-- 出力カード（フル幅） -->
+    <div class="card full-width-card">
+      <div class="card-header">📤 出力結果</div>
+      
+      <div class="form-group">
+        <label for="output">出力:</label>
+        <textarea id="output" readonly placeholder="結果がここに表示されます"></textarea>
+      </div>
+    </div>
 
-  <div id="errorMessage" class="error"></div>
-
-  <h2>暗号表（対応表）</h2>
-  <table id="mappingTable"></table>
+    <!-- 対応表カード（フル幅） -->
+    <div class="card full-width-card">
+      <div class="card-header">📊 暗号表（対応表）</div>
+      
+      <div class="table-container">
+        <table id="mappingTable">
+          <thead>
+            <tr>
+              <th>平文文字</th>
+              <th>暗号文文字</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <script type="module">
     // TypeScriptの型定義（JSDocコメントで型情報を表現）
@@ -151,7 +430,10 @@
           this.updateTableOnInput();
         });
         this.elements.key.addEventListener('input', () => this.updateTableOnInput());
-        this.elements.customOrder.addEventListener('input', () => this.updateTableOnInput());
+        this.elements.customOrder.addEventListener('input', () => {
+          this.updateTableOnInput();
+          this.updateCharacterCount(); // カスタム文字順序変更時にカウンター更新
+        });
         this.elements.processBtn.addEventListener('click', () => this.processText());
         
         // 入力テキストの変更時に文字数カウンターを更新
@@ -285,6 +567,7 @@
        */
       showError(message) {
         this.elements.errorMessage.textContent = message;
+        this.elements.errorMessage.style.display = 'block';
       }
 
       /**
@@ -293,6 +576,7 @@
        */
       clearError() {
         this.elements.errorMessage.textContent = '';
+        this.elements.errorMessage.style.display = 'none';
       }
 
       /**
@@ -317,6 +601,12 @@
       processText() {
         if (!this.validateInput()) return;
 
+        // ボタンを処理中状態に
+        const originalText = this.elements.processBtn.textContent;
+        this.elements.processBtn.textContent = '⏳ 処理中...';
+        this.elements.processBtn.classList.add('processing');
+        this.elements.processBtn.disabled = true;
+
         try {
           const mode = this.elements.mode.value;
           const order = this.elements.order.value;
@@ -334,13 +624,20 @@
           this.updateTable(base, key, mode);
           
           // 処理成功のフィードバック
-          this.elements.processBtn.textContent = '完了!';
+          this.elements.processBtn.textContent = '✅ 完了!';
           setTimeout(() => {
-            this.elements.processBtn.textContent = '実行';
+            this.elements.processBtn.textContent = originalText;
+            this.elements.processBtn.classList.remove('processing');
+            this.elements.processBtn.disabled = false;
           }, 1000);
 
         } catch (error) {
           this.showError(`処理中にエラーが発生しました: ${error.message}`);
+          
+          // エラー時のボタン復旧
+          this.elements.processBtn.textContent = originalText;
+          this.elements.processBtn.classList.remove('processing');
+          this.elements.processBtn.disabled = false;
         }
       }
 
@@ -353,14 +650,14 @@
        */
       updateTable(base, key, mode) {
         const shift = mode === 'encrypt' ? key : -key;
+        const tbody = this.elements.mappingTable.querySelector('tbody');
         
-        const headerRow = '<tr><th>平文文字</th><th>暗号文文字</th></tr>';
         const rows = base.map((char, index) => {
           const mappedChar = this.transformCharacter(char, base, shift);
           return `<tr><td>${char}</td><td>${mappedChar}</td></tr>`;
         }).join('');
 
-        this.elements.mappingTable.innerHTML = headerRow + rows;
+        tbody.innerHTML = rows;
       }
 
       /**
