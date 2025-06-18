@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>日本語シーザー暗号</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2em;
+      background-color: #f5f5f5;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+    }
+    select, input, button {
+      margin: 0.5em 0;
+      padding: 0.5em;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 4px 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>日本語シーザー暗号ツール</h1>
+
+  <label for="mode">モード:</label>
+  <select id="mode">
+    <option value="encrypt">暗号化</option>
+    <option value="decrypt">復号</option>
+  </select><br>
+
+  <label for="order">並び順:</label>
+  <select id="order">
+    <option value="aiueo">あいうえお順</option>
+    <option value="iroha">いろは順</option>
+  </select><br>
+
+  <label for="key">鍵（シフト数）:</label>
+  <input type="number" id="key" value="3"><br>
+
+  <label for="input">入力（複数行可）:</label><br>
+  <textarea id="input"></textarea><br>
+
+  <button onclick="processText()">実行</button><br>
+
+  <label for="output">出力:</label><br>
+  <textarea id="output" readonly></textarea>
+
+  <h2>対応表</h2>
+  <table id="mappingTable"></table>
+
+  <script>
+    const aiueo = [..."あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん"];
+    const iroha = [..."いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせすん"];
+
+    function processText() {
+      const mode = document.getElementById('mode').value;
+      const order = document.getElementById('order').value;
+      const key = parseInt(document.getElementById('key').value);
+      const input = document.getElementById('input').value;
+
+      const base = order === 'aiueo' ? aiueo : iroha;
+      const output = [...input].map(ch => {
+        const index = base.indexOf(ch);
+        if (index === -1) return ch;
+        const shift = mode === 'encrypt' ? key : -key;
+        const newIndex = (index + shift + base.length) % base.length;
+        return base[newIndex];
+      }).join('');
+
+      document.getElementById('output').value = output;
+      updateTable(base, key, mode);
+    }
+
+    function updateTable(base, key, mode) {
+      const table = document.getElementById('mappingTable');
+      table.innerHTML = '<tr><th>平文</th><th>暗号文</th></tr>';
+      base.forEach((ch, i) => {
+        const shift = mode === 'encrypt' ? key : -key;
+        const mapped = base[(i + shift + base.length) % base.length];
+        const row = `<tr><td>${ch}</td><td>${mapped}</td></tr>`;
+        table.innerHTML += row;
+      });
+    }
+  </script>
+</body>
+</html>
+
