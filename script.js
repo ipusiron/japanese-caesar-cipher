@@ -674,7 +674,9 @@ class JapaneseCaesarCipher {
     });
 
     // tbodyをクリアして新しい行を追加
-    tbody.innerHTML = '';
+    while (tbody.firstChild) {
+      tbody.removeChild(tbody.firstChild);
+    }
     rows.forEach(row => tbody.appendChild(row));
   }
 
@@ -725,6 +727,20 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('日本語シーザー暗号ツールが初期化されました。');
   } catch (error) {
     console.error('初期化エラー:', error);
-    document.body.innerHTML = `<h1>エラー</h1><p>アプリケーションの初期化に失敗しました: ${error.message}</p>`;
+
+    // 安全なエラー表示: DOM要素を直接作成
+    const container = document.createElement('div');
+    container.style.cssText = 'padding: 20px; text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb;';
+
+    const heading = document.createElement('h1');
+    heading.textContent = 'エラー';
+    container.appendChild(heading);
+
+    const message = document.createElement('p');
+    message.textContent = `アプリケーションの初期化に失敗しました: ${error.message}`;
+    container.appendChild(message);
+
+    document.body.textContent = ''; // 既存コンテンツをクリア
+    document.body.appendChild(container);
   }
 });
