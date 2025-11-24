@@ -1,3 +1,42 @@
+<!--
+---
+id: day004
+slug: japanese-caesar-cipher
+
+title: "Japanese Caesar Cipher"
+
+subtitle_ja: "ひらがな専用シーザー暗号ツール"
+subtitle_en: "Caesar Cipher Tool for Japanese Hiragana"
+
+description_ja: "日本語のひらがな文字を対象としたシーザー暗号の暗号化・復号ツール。あいうえお順、いろは順、任意の文字順序に対応。"
+description_en: "A web-based Caesar cipher encryption/decryption tool for Japanese hiragana characters. Supports aiueo order, iroha order, and custom character sequences."
+
+category_ja:
+  - 古典暗号
+  - 換字式暗号
+category_en:
+  - Classical Cryptography
+  - Substitution Cipher
+
+difficulty: 1
+
+tags:
+  - caesar-cipher
+  - shift-cipher
+  - hiragana
+  - cryptography
+  - japanese
+  - classical-cipher
+  - web-tool
+  - education
+
+repo_url: "https://github.com/ipusiron/japanese-caesar-cipher"
+demo_url: "https://ipusiron.github.io/japanese-caesar-cipher/"
+
+hub: true
+---
+-->
+
 # 日本語版シーザー暗号（Japanese Caesar Cipher）
 
 日本語（ひらがな）専用のシーザー暗号ツールです。
@@ -19,7 +58,7 @@ Webベースで動作します。
 
 ## 🔐 デモ
 
-- デモサイト（GitHub Pages）:  
+- デモサイト（GitHub Pages）:
   👉 [https://ipusiron.github.io/japanese-caesar-cipher/](https://ipusiron.github.io/japanese-caesar-cipher/)
 
 ## 💡 使い方

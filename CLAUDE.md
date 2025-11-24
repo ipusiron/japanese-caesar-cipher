@@ -4,76 +4,55 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Japanese Caesar Cipher tool that encrypts and decrypts Japanese hiragana characters. It's a single-page web application built with vanilla HTML, CSS, and JavaScript, designed for educational purposes as part of a "100-day AI security tools challenge" (Day 4).
+Japanese Caesar Cipher tool for encrypting/decrypting hiragana characters. Part of "100-day AI security tools challenge" (Day 4). Educational tool demonstrating classical cryptography - not suitable for protecting sensitive information.
 
 ## Architecture
 
-- **Single-page application**: All code is embedded in `index.html`
-- **No build process**: Direct browser execution without compilation
-- **Vanilla JavaScript**: Uses ES6+ module syntax with class-based architecture
-- **CSS Grid/Flexbox layout**: Modern responsive design with CSS custom properties
-- **Self-contained**: No external dependencies or build tools
+- **Static web application**: HTML + external CSS/JS files, no build process
+- **Vanilla JavaScript**: ES6+ with class-based architecture (`JapaneseCaesarCipher` class in `script.js`)
+- **Self-contained**: No external dependencies
 
-## Key Components
+### File Structure
 
-### Core JavaScript Class
-- `JapaneseCaesarCipher`: Main application class handling encryption/decryption logic
-- Located in `index.html` starting at line 394
-- Handles three character orderings: あいうえお順 (aiueo), いろは順 (iroha), and custom ordering
+- `index.html` - HTML structure with form controls and layout
+- `script.js` - Main application logic (encryption/decryption, input handling, DOM manipulation)
+- `style.css` - Styling with CSS custom properties, responsive design, dark mode support
 
-### Character Sets
+### Core Components
+
+**Character Sets** (in `script.js`):
 - `AIUEO`: Standard hiragana ordering (50 characters)
 - `IROHA`: Traditional iroha poem ordering (47 unique characters + ん)
 - Custom ordering: User-defined character sequences
 
-### Security Features
-- Input sanitization with `sanitizeInput()` method
-- XSS prevention through HTML escaping
-- Character validation for custom ordering
-- Input length limits and dangerous pattern filtering
+**Key Methods**:
+- `sanitizeInput()` - XSS prevention, input validation, dangerous pattern filtering
+- `transformCharacter()` - Core cipher logic
+- `processText()` - Main encryption/decryption handler
+- `validateCustomOrder()` - Custom character set validation
 
 ## Development Commands
-
-Since this is a static web application:
 
 ```bash
 # Serve locally (Python 3)
 python -m http.server 8000
 
 # Serve locally (Python 2)
-python -SimpleHTTPServer 8000
+python -m SimpleHTTPServer 8000
 
-# Open directly in browser
-open index.html
+# Or open index.html directly in browser
 ```
-
-## File Structure
-
-- `index.html`: Complete application with embedded CSS and JavaScript
-- `style.css`: Additional external stylesheets (currently empty/minimal)
-- `README.md`: Project documentation in Japanese
-- `LICENSE`: MIT license
-
-## Code Style Conventions
-
-- ES6+ JavaScript with JSDoc type annotations
-- CSS custom properties for theming
-- Semantic HTML with ARIA accessibility
-- Responsive design with mobile-first approach
-- Error handling with user-friendly Japanese messages
 
 ## Testing
 
-No automated testing framework is configured. Testing should be done manually by:
-1. Testing different encryption/decryption modes
-2. Validating all three character ordering systems
-3. Testing input sanitization with malicious inputs
-4. Verifying keyboard shortcuts (Ctrl+Enter, Ctrl+L, Ctrl+Shift+C)
-5. Testing responsive layout on different screen sizes
+Manual testing - no automated framework. Key test areas:
+1. Encryption/decryption modes with all character orderings (aiueo, iroha, custom)
+2. Input sanitization with XSS payloads
+3. Keyboard shortcuts: `Ctrl+Enter` (execute), `Ctrl+L` (clear), `Ctrl+Shift+C` (copy)
+4. Responsive layout and dark mode
 
-## Security Considerations
+## Security Notes
 
-- This is an educational tool demonstrating classical cryptography
-- Not suitable for protecting sensitive information
-- Input sanitization prevents XSS but doesn't provide cryptographic security
-- Character patterns remain visible, making frequency analysis possible
+- Input sanitization prevents XSS but provides no cryptographic security
+- Character patterns remain visible (frequency analysis possible)
+- Input length limited to 10,000 characters by default
