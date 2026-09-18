@@ -2,10 +2,17 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="ひらがな専用のシーザー暗号ツール。あいうえお順・いろは順・任意の文字順序で暗号化と復号ができる">
   <title>日本語シーザー暗号（Japanese Caesar Cipher）</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <noscript>このツールの利用にはJavaScriptが必要です。</noscript>
   <div class="container">
     <!-- ヘッダーカード -->
     <div class="header-card">
@@ -16,7 +23,7 @@
     <div class="grid">
       <!-- 設定カード -->
       <div class="card">
-        <div class="card-header">⚙️ 設定</div>
+        <h2 class="card-header">⚙️ 設定</h2>
         
         <div class="form-group">
           <label for="mode">モード:</label>
@@ -34,10 +41,10 @@
             <option value="custom">任意</option>
           </select>
           
-          <div id="customOrderContainer" class="custom-order-container" style="display: none;">
+          <div id="customOrderContainer" class="custom-order-container" hidden>
             <label for="customOrder">文字順序:</label>
-            <input type="text" id="customOrder" placeholder="例: あかさたなはまやらわ">
-            <small style="display: block; color: #6c757d; margin-top: 0.5em;">
+            <input type="text" id="customOrder" maxlength="1000" placeholder="例: あかさたなはまやらわ">
+            <small class="help-text">
               使用したい文字を重複なく並べて入力してください
             </small>
           </div>
@@ -45,17 +52,17 @@
 
         <div class="form-group">
           <label for="key">鍵（シフト数）:</label>
-          <input type="number" id="key" value="3" min="0" max="49">
+          <input type="number" id="key" value="3" min="0" max="45" step="1">
         </div>
       </div>
 
       <!-- 入力カード -->
       <div class="card">
-        <div class="card-header">📝 入力</div>
+        <h2 class="card-header">📝 入力</h2>
         
         <div class="form-group">
           <label for="input">入力テキスト（複数行可）:</label>
-          <textarea id="input" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea>
+          <textarea id="input" maxlength="100000" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea>
           
           <div class="stats-container">
             <span class="stat-item">総文字数: <span class="stat-number" id="totalChars">0</span></span>
@@ -66,23 +73,23 @@
 
         <button id="processBtn">🚀 実行</button>
         
-        <div class="button-group" style="display: grid; grid-template-columns: 1fr; gap: 0.5em; margin-top: 0.5em;">
+        <div class="button-group">
           <button type="button" id="clearBtn" class="secondary-btn">🗑️ すべてクリア</button>
         </div>
         
-        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="errorMessage" class="error" role="alert" hidden></div>
       </div>
     </div>
 
     <!-- 出力カード（フル幅） -->
     <div class="card full-width-card">
-      <div class="card-header">📤 出力結果</div>
+      <h2 class="card-header">📤 出力結果</h2>
       
       <div class="form-group">
         <label for="output">出力:</label>
         <textarea id="output" readonly placeholder="結果がここに表示されます"></textarea>
         
-        <div class="button-group" style="display: grid; grid-template-columns: 1fr; gap: 0.5em; margin-top: 0.5em;">
+        <div class="button-group">
           <button type="button" id="copyBtn" class="secondary-btn">📋 結果をコピー</button>
         </div>
       </div>
@@ -90,14 +97,15 @@
 
     <!-- 対応表カード（フル幅） -->
     <div class="card full-width-card">
-      <div class="card-header">📊 暗号表（対応表）</div>
+      <h2 class="card-header">📊 暗号表（対応表）</h2>
       
       <div class="table-container">
         <table id="mappingTable">
+          <caption class="visually-hidden"></caption>
           <thead>
             <tr>
-              <th>平文文字</th>
-              <th>暗号文文字</th>
+              <th scope="col">平文文字</th>
+              <th scope="col">暗号文文字</th>
             </tr>
           </thead>
           <tbody>
@@ -114,17 +122,17 @@
         古典暗号は現代の暗号学的標準を満たしておらず、容易に解読される可能性があります。
       </div>
       
-      <details style="margin-top: 1em;">
-        <summary style="cursor: pointer; color: var(--gray-600); font-size: 0.9em;">⌨️ キーボードショートカット</summary>
-        <div style="margin-top: 0.5em; font-size: 0.9em; color: var(--gray-600);">
-          <p><kbd>Ctrl</kbd> + <kbd>Enter</kbd>: 暗号化/復号実行</p>
-          <p><kbd>Ctrl</kbd> + <kbd>L</kbd>: すべてクリア</p>
-          <p><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd>: 結果をコピー</p>
+      <details class="shortcut-details">
+        <summary class="shortcut-summary">⌨️ キーボードショートカット</summary>
+        <div class="shortcut-content">
+          <p><kbd>Ctrl</kbd> + <kbd>Enter</kbd>（Macは<kbd>⌘</kbd> + <kbd>Enter</kbd>）: 暗号化/復号実行</p>
         </div>
       </details>
     </div>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <div id="statusMessage" class="toast" role="status" aria-live="polite"></div>
+  <script src="cipher.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

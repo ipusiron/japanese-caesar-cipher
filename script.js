@@ -16,102 +16,18 @@
  */
 class JapaneseCaesarCipher {
   /**
-   * @type {readonly string[]}
-   */
-  static AIUEO = Object.freeze([..."あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん"]);
-  
-  /**
-   * @type {readonly string[]}
-   */
-  static IROHA = Object.freeze([..."いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせすん"]);
-
-  /**
    * DOM要素の参照
    * @private
    */
   constructor() {
     this.elements = this.initializeElements();
+    this.statusTimer = null;
+    this.processTimer = null;
+    this.copyTimer = null;
     this.setupEventListeners();
     this.toggleCustomOrderInput(); // 初期状態を設定
     this.updateCharacterCount(); // 初期文字数カウンターを設定
     this.updateTableOnInput();
-  }
-
-  /**
-   * 入力値をサニタイズ
-   * @param {string} input - サニタイズ対象の文字列
-   * @param {Object} options - サニタイズオプション
-   * @returns {string} サニタイズ済み文字列
-   * @private
-   */
-  sanitizeInput(input, options = {}) {
-    if (typeof input !== 'string') {
-      return '';
-    }
-
-    const {
-      allowHTML = false,
-      maxLength = 10000,
-      allowedChars = null,
-      trimWhitespace = true
-    } = options;
-
-    let sanitized = input;
-
-    // 長さ制限
-    if (sanitized.length > maxLength) {
-      sanitized = sanitized.substring(0, maxLength);
-      this.showWarning(`入力が${maxLength}文字に制限されました。`);
-    }
-
-    // 前後の空白文字を削除
-    if (trimWhitespace) {
-      sanitized = sanitized.trim();
-    }
-
-    // HTMLタグのエスケープ
-    if (!allowHTML) {
-      sanitized = sanitized
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
-    }
-
-    // 危険なスクリプト関連文字列の除去
-    const dangerousPatterns = [
-      /javascript:/gi,
-      /data:/gi,
-      /vbscript:/gi,
-      /on\w+\s*=/gi,
-      /<script/gi,
-      /<\/script>/gi,
-      /<iframe/gi,
-      /<object/gi,
-      /<embed/gi,
-      /<link/gi,
-      /<meta/gi
-    ];
-
-    dangerousPatterns.forEach(pattern => {
-      if (pattern.test(sanitized)) {
-        sanitized = sanitized.replace(pattern, '');
-        this.showWarning('潜在的に危険な内容が除去されました。');
-      }
-    });
-
-    // 特定文字のみ許可（カスタム文字順序用）
-    if (allowedChars) {
-      const allowedSet = new Set(allowedChars);
-      sanitized = [...sanitized].filter(char => allowedSet.has(char)).join('');
-    }
-
-    // 制御文字の除去（タブ、改行、通常の空白は保持）
-    sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-
-    return sanitized;
   }
 
   /**
@@ -120,42 +36,7 @@ class JapaneseCaesarCipher {
    * @private
    */
   showWarning(message) {
-    // 既存の警告を削除
-    const existingWarning = document.getElementById('warning-message');
-    if (existingWarning) {
-      existingWarning.remove();
-    }
-
-    // 警告メッセージを作成
-    const warningDiv = document.createElement('div');
-    warningDiv.id = 'warning-message';
-    warningDiv.className = 'warning';
-    warningDiv.textContent = `⚠️ ${message}`;
-    warningDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeaa7;
-      padding: 12px 16px;
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 1000;
-      max-width: 300px;
-      font-size: 14px;
-      animation: slideIn 0.3s ease-out;
-    `;
-
-    document.body.appendChild(warningDiv);
-
-    // 5秒後に自動削除
-    setTimeout(() => {
-      if (warningDiv.parentNode) {
-        warningDiv.style.animation = 'slideOut 0.3s ease-in';
-        setTimeout(() => warningDiv.remove(), 300);
-      }
-    }, 5000);
+    this.showStatus(message, 'warning', 5000);
   }
 
   /**
@@ -164,42 +45,24 @@ class JapaneseCaesarCipher {
    * @private
    */
   showSuccess(message) {
-    // 既存のメッセージを削除
-    const existingMessage = document.getElementById('success-message');
-    if (existingMessage) {
-      existingMessage.remove();
-    }
+    this.showStatus(message, 'success', 3000);
+  }
 
-    // 成功メッセージを作成
-    const successDiv = document.createElement('div');
-    successDiv.id = 'success-message';
-    successDiv.className = 'success';
-    successDiv.textContent = `✅ ${message}`;
-    successDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-      padding: 12px 16px;
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 1000;
-      max-width: 300px;
-      font-size: 14px;
-      animation: slideIn 0.3s ease-out;
-    `;
-
-    document.body.appendChild(successDiv);
-
-    // 3秒後に自動削除
-    setTimeout(() => {
-      if (successDiv.parentNode) {
-        successDiv.style.animation = 'slideOut 0.3s ease-in';
-        setTimeout(() => successDiv.remove(), 300);
-      }
-    }, 3000);
+  /**
+   * 常設の通知領域を更新（前の通知タイマーは取り消す）
+   * @param {string} message - 通知内容
+   * @param {'warning' | 'success'} type - 通知種別
+   * @param {number} duration - 表示時間（ミリ秒）
+   * @private
+   */
+  showStatus(message, type, duration) {
+    clearTimeout(this.statusTimer);
+    this.elements.statusMessage.className = `toast toast--${type}`;
+    this.elements.statusMessage.textContent = message;
+    this.statusTimer = setTimeout(() => {
+      this.elements.statusMessage.textContent = '';
+      this.elements.statusMessage.className = 'toast';
+    }, duration);
   }
 
   /**
@@ -209,29 +72,21 @@ class JapaneseCaesarCipher {
   clearAll() {
     try {
       // 入力・出力をクリア
-      this.safeSetValue(this.elements.input, '');
-      this.safeSetValue(this.elements.output, '');
-      
-      // カスタム文字順序もクリア
-      if (this.elements.order.value === 'custom') {
-        this.safeSetValue(this.elements.customOrder, '');
-      }
-      
-      // 統計をリセット
+      this.elements.input.value = '';
+      this.elements.output.value = '';
+
+      // 並び順にかかわらず、カスタム文字順序もクリア
+      this.elements.customOrder.value = '';
+
+      // 統計と対応表を現在の設定で更新
       this.updateCharacterCount();
-      
-      // 対応表をクリア
-      const tbody = this.elements.mappingTable.querySelector('tbody');
-      tbody.innerHTML = '';
-      
-      // エラーメッセージをクリア
-      this.clearError();
-      
+      this.updateTableOnInput();
+      clearTimeout(this.processTimer);
+      this.elements.processBtn.textContent = '🚀 実行';
+
       // フォーカスを入力欄に移動
       this.elements.input.focus();
-      
       this.showSuccess('すべてクリアしました');
-      
     } catch (error) {
       this.showError('クリア中にエラーが発生しました');
     }
@@ -244,97 +99,28 @@ class JapaneseCaesarCipher {
   async copyOutput() {
     try {
       const outputText = this.elements.output.value;
-      
       if (!outputText || outputText.trim() === '') {
         this.showWarning('コピーする内容がありません');
         return;
       }
 
       // クリップボードAPI使用
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(outputText);
-        this.showSuccess('結果をクリップボードにコピーしました');
-      } else {
-        // フォールバック: 古いブラウザ対応
-        this.copyToClipboardFallback(outputText);
-      }
-      
-      // コピーボタンの視覚的フィードバック
-      const originalText = this.elements.copyBtn.textContent;
-      this.elements.copyBtn.textContent = '✅ コピー完了';
-      this.elements.copyBtn.style.background = 'var(--success)';
-      
-      setTimeout(() => {
-        this.elements.copyBtn.textContent = originalText;
-        this.elements.copyBtn.style.background = '';
-      }, 2000);
-      
-    } catch (error) {
-      this.showError('コピーに失敗しました: ' + error.message);
-    }
-  }
+      await navigator.clipboard.writeText(outputText);
+      this.showSuccess('結果をクリップボードにコピーしました');
 
-  /**
-   * クリップボードコピーのフォールバック
-   * @param {string} text - コピーするテキスト
-   * @private
-   */
-  copyToClipboardFallback(text) {
-    // 一時的なテキストエリアを作成
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-    
-    try {
-      textArea.focus();
-      textArea.select();
-      
-      // 古いブラウザのコピーコマンド
-      const successful = document.execCommand('copy');
-      if (successful) {
-        this.showSuccess('結果をクリップボードにコピーしました');
-      } else {
-        throw new Error('コピーコマンドが失敗しました');
-      }
+      // コピーボタンの視覚的フィードバック
+      clearTimeout(this.copyTimer);
+      this.elements.copyBtn.textContent = '✅ コピー完了';
+      this.elements.copyBtn.classList.add('copy-success');
+      this.copyTimer = setTimeout(() => {
+        this.elements.copyBtn.textContent = '📋 結果をコピー';
+        this.elements.copyBtn.classList.remove('copy-success');
+      }, 2000);
     } catch (error) {
-      // 手動コピーを促す
-      this.showWarning('自動コピーに失敗しました。手動で結果を選択してコピーしてください。');
-      
-      // 出力テキストエリアを選択状態にする
+      this.showWarning('コピーできませんでした。出力欄を選択してコピーしてください。');
       this.elements.output.focus();
       this.elements.output.select();
-    } finally {
-      document.body.removeChild(textArea);
     }
-  }
-
-  /**
-   * 安全にDOM要素にテキストを設定
-   * @param {HTMLElement} element - 対象要素
-   * @param {string} text - 設定するテキスト
-   * @private
-   */
-  safeSetText(element, text) {
-    if (!element) return;
-    
-    const sanitizedText = this.sanitizeInput(text, { maxLength: 50000 });
-    element.textContent = sanitizedText;
-  }
-
-  /**
-   * 安全にDOM要素に値を設定
-   * @param {HTMLElement} element - 対象要素
-   * @param {string} value - 設定する値
-   * @private
-   */
-  safeSetValue(element, value) {
-    if (!element) return;
-    
-    const sanitizedValue = this.sanitizeInput(value, { maxLength: 50000 });
-    element.value = sanitizedValue;
   }
 
   /**
@@ -362,6 +148,7 @@ class JapaneseCaesarCipher {
       copyBtn: getElement('copyBtn'),
       mappingTable: getElement('mappingTable'),
       errorMessage: getElement('errorMessage'),
+      statusMessage: getElement('statusMessage'),
       customOrderContainer: getElement('customOrderContainer'),
       customOrder: getElement('customOrder'),
       totalChars: getElement('totalChars'),
@@ -388,29 +175,18 @@ class JapaneseCaesarCipher {
     this.elements.processBtn.addEventListener('click', () => this.processText());
     this.elements.clearBtn.addEventListener('click', () => this.clearAll());
     this.elements.copyBtn.addEventListener('click', () => this.copyOutput());
-    
+
     // 入力テキストの変更時に文字数カウンターを更新
     this.elements.input.addEventListener('input', () => this.updateCharacterCount());
-    
-    // Enterキーでも実行可能
-    this.elements.input.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'Enter') {
-        this.processText();
-      }
-    });
 
-    // キーボードショートカット
-    document.addEventListener('keydown', (e) => {
-      // Ctrl+L: クリア
-      if (e.ctrlKey && e.key === 'l') {
-        e.preventDefault();
-        this.clearAll();
-      }
-      // Ctrl+Shift+C: コピー
-      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-        e.preventDefault();
-        this.copyOutput();
-      }
+    // Ctrl+Enter（Macは⌘+Enter）で実行可能
+    [this.elements.input, this.elements.key, this.elements.customOrder].forEach(element => {
+      element.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          this.processText();
+        }
+      });
     });
   }
 
@@ -419,24 +195,14 @@ class JapaneseCaesarCipher {
    * @private
    */
   updateCharacterCount() {
-    const inputText = this.sanitizeInput(this.elements.input.value, {
-      maxLength: 100000,
-      trimWhitespace: false
-    });
-    
-    // サニタイズ後の値をフィールドに戻す（必要な場合のみ）
-    if (inputText !== this.elements.input.value) {
-      this.safeSetValue(this.elements.input, inputText);
-    }
-    
+    const inputText = this.elements.input.value;
     const order = this.elements.order.value;
     const characterArray = this.getCharacterArray(order);
-    
-    const stats = this.getTextStatistics(inputText, characterArray);
-    
-    this.safeSetText(this.elements.totalChars, stats.totalChars.toString());
-    this.safeSetText(this.elements.targetChars, stats.targetChars.toString());
-    this.safeSetText(this.elements.otherChars, stats.otherChars.toString());
+    const stats = JapaneseCaesar.countStats(inputText, characterArray);
+
+    this.elements.totalChars.textContent = stats.total.toString();
+    this.elements.targetChars.textContent = stats.target.toString();
+    this.elements.otherChars.textContent = stats.other.toString();
   }
 
   /**
@@ -445,7 +211,7 @@ class JapaneseCaesarCipher {
    */
   toggleCustomOrderInput() {
     const isCustom = this.elements.order.value === 'custom';
-    this.elements.customOrderContainer.style.display = isCustom ? 'block' : 'none';
+    this.elements.customOrderContainer.hidden = !isCustom;
     // カスタム順序の変更時にも文字数カウンターを更新
     this.updateCharacterCount();
   }
@@ -458,20 +224,10 @@ class JapaneseCaesarCipher {
    */
   getCharacterArray(order) {
     if (order === 'custom') {
-      const sanitizedOrder = this.sanitizeInput(this.elements.customOrder.value, {
-        maxLength: 1000,
-        allowedChars: null,
-        trimWhitespace: true
-      });
-      
-      // サニタイズ後の値をフィールドに戻す（必要な場合のみ）
-      if (sanitizedOrder !== this.elements.customOrder.value) {
-        this.safeSetValue(this.elements.customOrder, sanitizedOrder);
-      }
-      
-      return [...sanitizedOrder];
+      const result = JapaneseCaesar.parseOrder(this.elements.customOrder.value);
+      return result.ok ? result.chars : [];
     }
-    return order === 'aiueo' ? JapaneseCaesarCipher.AIUEO : JapaneseCaesarCipher.IROHA;
+    return order === 'aiueo' ? JapaneseCaesar.AIUEO : JapaneseCaesar.IROHA;
   }
 
   /**
@@ -481,41 +237,18 @@ class JapaneseCaesarCipher {
    * @private
    */
   validateCustomOrder(customOrder) {
-    // 入力値をサニタイズ
-    const sanitizedOrder = this.sanitizeInput(customOrder, {
-      maxLength: 1000,
-      trimWhitespace: true
-    });
-
-    if (!sanitizedOrder || sanitizedOrder.length === 0) {
-      this.showError('カスタム文字順序が入力されていません。');
+    const result = JapaneseCaesar.parseOrder(customOrder);
+    if (!result.ok) {
+      const messages = {
+        EMPTY: 'カスタム文字順序が入力されていません。',
+        TOO_SHORT: 'カスタム文字順序は2文字以上である必要があります。',
+        WHITESPACE: 'カスタム文字順序に空白文字は使用できません。',
+        CONTROL: 'カスタム文字順序に制御文字が含まれています。',
+        DUPLICATE: 'カスタム文字順序に重複した文字が含まれています。'
+      };
+      this.showError(messages[result.code], this.elements.customOrder);
       return false;
     }
-
-    if (sanitizedOrder.length < 2) {
-      this.showError('カスタム文字順序は2文字以上である必要があります。');
-      return false;
-    }
-
-    // 重複文字チェック
-    const uniqueChars = new Set([...sanitizedOrder]);
-    if (uniqueChars.size !== sanitizedOrder.length) {
-      this.showError('カスタム文字順序に重複した文字が含まれています。');
-      return false;
-    }
-
-    // 空白文字チェック
-    if (sanitizedOrder.includes(' ') || sanitizedOrder.includes('　')) {
-      this.showError('カスタム文字順序に空白文字は使用できません。');
-      return false;
-    }
-
-    // 制御文字チェック
-    if (/[\x00-\x1F\x7F]/.test(sanitizedOrder)) {
-      this.showError('カスタム文字順序に制御文字が含まれています。');
-      return false;
-    }
-
     return true;
   }
 
@@ -525,48 +258,52 @@ class JapaneseCaesarCipher {
    * @private
    */
   validateInput() {
-    const key = parseInt(this.elements.key.value);
-    const order = this.elements.order.value;
-    
-    if (isNaN(key)) {
-      this.showError('鍵（シフト数）は数値である必要があります。');
-      return false;
-    }
-
-    if (key < 0) {
-      this.showError('鍵（シフト数）は0以上である必要があります。');
-      return false;
-    }
-
-    // カスタム順序の場合は動的に最大値を設定
-    if (order === 'custom') {
-      if (!this.validateCustomOrder(this.elements.customOrder.value)) {
-        return false;
-      }
-      const maxKey = this.elements.customOrder.value.length - 1;
-      if (key > maxKey) {
-        this.showError(`カスタム文字順序の場合、鍵（シフト数）は${maxKey}以下である必要があります。`);
-        return false;
-      }
-    } else {
-      if (key > 49) {
-        this.showError('鍵（シフト数）は49以下である必要があります。');
-        return false;
-      }
-    }
-
     this.clearError();
+    const rawKey = this.elements.key.value;
+    const key = Number(rawKey);
+    const order = this.elements.order.value;
+    const chars = this.getCharacterArray(order);
+
+    // すべての並び順で文字数に応じて最大値を設定
+    this.elements.key.max = String(Math.max(0, chars.length - 1));
+    if (order === 'custom' && !this.validateCustomOrder(this.elements.customOrder.value)) {
+      return false;
+    }
+    if (rawKey.trim() === '' || !Number.isFinite(key)) {
+      this.showError('鍵（シフト数）は数値である必要があります。', this.elements.key);
+      return false;
+    }
+    if (!Number.isInteger(key)) {
+      this.showError('鍵（シフト数）は整数である必要があります。', this.elements.key);
+      return false;
+    }
+    if (key < 0) {
+      this.showError('鍵（シフト数）は0以上である必要があります。', this.elements.key);
+      return false;
+    }
+
+    const maxKey = chars.length - 1;
+    if (key > maxKey) {
+      const orderName = this.elements.order.selectedOptions[0].textContent;
+      this.showError(
+        `鍵（シフト数）は${maxKey}以下である必要があります（${orderName}は${chars.length}文字）。`,
+        this.elements.key
+      );
+      return false;
+    }
     return true;
   }
 
   /**
    * エラーメッセージを表示
    * @param {string} message - エラーメッセージ
+   * @param {HTMLInputElement | null} field - エラーのある入力欄
    * @private
    */
-  showError(message) {
+  showError(message, field = null) {
     this.elements.errorMessage.textContent = message;
-    this.elements.errorMessage.style.display = 'block';
+    this.elements.errorMessage.hidden = false;
+    if (field) field.setAttribute('aria-invalid', 'true');
   }
 
   /**
@@ -575,68 +312,43 @@ class JapaneseCaesarCipher {
    */
   clearError() {
     this.elements.errorMessage.textContent = '';
-    this.elements.errorMessage.style.display = 'none';
-  }
-
-  /**
-   * 文字を暗号化/復号
-   * @param {string} char - 対象文字
-   * @param {readonly string[]} base - 文字配列
-   * @param {number} shift - シフト数
-   * @returns {string} 変換後の文字
-   * @private
-   */
-  transformCharacter(char, base, shift) {
-    const index = base.indexOf(char);
-    if (index === -1) return char;
-    
-    const newIndex = (index + shift + base.length) % base.length;
-    return base[newIndex];
+    this.elements.errorMessage.hidden = true;
+    this.elements.key.removeAttribute('aria-invalid');
+    this.elements.customOrder.removeAttribute('aria-invalid');
   }
 
   /**
    * テキストを処理（暗号化/復号）
    */
   processText() {
-    if (!this.validateInput()) return;
-
-    // ボタンを処理中状態に
-    const originalText = this.elements.processBtn.textContent;
-    this.elements.processBtn.textContent = '⏳ 処理中...';
-    this.elements.processBtn.classList.add('processing');
-    this.elements.processBtn.disabled = true;
+    if (!this.validateInput()) {
+      this.updateTableOnInput();
+      return;
+    }
 
     try {
       const mode = this.elements.mode.value;
       const order = this.elements.order.value;
-      const key = parseInt(this.elements.key.value);
+      const key = Number(this.elements.key.value);
       const input = this.elements.input.value;
-
       const base = this.getCharacterArray(order);
-      const shift = mode === 'encrypt' ? key : -key;
-      
-      const output = [...input]
-        .map(char => this.transformCharacter(char, base, shift))
-        .join('');
+      const output = JapaneseCaesar.shiftText(input, base, key, { decrypt: mode === 'decrypt' });
 
       this.elements.output.value = output;
       this.updateTable(base, key, mode);
-      
-      // 処理成功のフィードバック
-      this.elements.processBtn.textContent = '✅ 完了!';
-      setTimeout(() => {
-        this.elements.processBtn.textContent = originalText;
-        this.elements.processBtn.classList.remove('processing');
-        this.elements.processBtn.disabled = false;
-      }, 1000);
+      this.updateCharacterCount();
 
+      // 処理成功のフィードバック（ボタンは無効にせずフォーカスを維持）
+      clearTimeout(this.processTimer);
+      this.elements.processBtn.textContent = '✅ 完了!';
+      this.showSuccess(mode === 'encrypt' ? '暗号化しました' : '復号しました');
+      this.processTimer = setTimeout(() => {
+        this.elements.processBtn.textContent = '🚀 実行';
+      }, 1000);
     } catch (error) {
       this.showError(`処理中にエラーが発生しました: ${error.message}`);
-      
-      // エラー時のボタン復旧
-      this.elements.processBtn.textContent = originalText;
-      this.elements.processBtn.classList.remove('processing');
-      this.elements.processBtn.disabled = false;
+      clearTimeout(this.processTimer);
+      this.elements.processBtn.textContent = '🚀 実行';
     }
   }
 
@@ -648,89 +360,63 @@ class JapaneseCaesarCipher {
    * @private
    */
   updateTable(base, key, mode) {
-    const shift = mode === 'encrypt' ? key : -key;
     const tbody = this.elements.mappingTable.querySelector('tbody');
-    
+
     // テーブル内容を安全に生成
-    const rows = base.map((char, index) => {
-      const originalChar = this.sanitizeInput(char, { maxLength: 10 });
-      const mappedChar = this.sanitizeInput(
-        this.transformCharacter(originalChar, base, shift), 
-        { maxLength: 10 }
-      );
-      
-      // HTMLエスケープ済みの安全な文字列として挿入
-      const row = document.createElement('tr');
-      const originalCell = document.createElement('td');
-      const mappedCell = document.createElement('td');
-      
-      this.safeSetText(originalCell, originalChar);
-      this.safeSetText(mappedCell, mappedChar);
-      
-      row.appendChild(originalCell);
-      row.appendChild(mappedCell);
-      
-      return row;
-    });
+    const rows = JapaneseCaesar.buildTable(base, key, { decrypt: mode === 'decrypt' })
+      .map(([originalChar, mappedChar]) => {
+        const row = document.createElement('tr');
+        const originalCell = document.createElement('td');
+        const mappedCell = document.createElement('td');
+
+        originalCell.textContent = originalChar;
+        mappedCell.textContent = mappedChar;
+        row.appendChild(originalCell);
+        row.appendChild(mappedCell);
+        return row;
+      });
 
     // tbodyをクリアして新しい行を追加
-    while (tbody.firstChild) {
-      tbody.removeChild(tbody.firstChild);
-    }
-    rows.forEach(row => tbody.appendChild(row));
+    tbody.replaceChildren(...rows);
   }
 
   /**
    * 入力変更時のテーブル更新
    */
   updateTableOnInput() {
-    if (!this.validateInput()) return;
-
     const mode = this.elements.mode.value;
+    const headers = this.elements.mappingTable.querySelectorAll('th');
+    headers[0].textContent = mode === 'encrypt' ? '平文文字' : '暗号文文字';
+    headers[1].textContent = mode === 'encrypt' ? '暗号文文字' : '平文文字';
+    const caption = this.elements.mappingTable.querySelector('caption');
+
+    if (!this.validateInput()) {
+      this.elements.mappingTable.querySelector('tbody').replaceChildren();
+      caption.textContent = '設定が無効なため対応表を表示できません。';
+      return;
+    }
+
     const order = this.elements.order.value;
-    const key = parseInt(this.elements.key.value);
-    
+    const key = Number(this.elements.key.value);
+    const orderName = this.elements.order.selectedOptions[0].textContent;
+    const modeName = mode === 'encrypt' ? '暗号化' : '復号';
+    caption.textContent = `${orderName}・鍵${key}・${modeName}の対応表`;
     const base = this.getCharacterArray(order);
     this.updateTable(base, key, mode);
   }
 
-  /**
-   * 統計情報を取得
-   * @param {string} text - 分析対象テキスト
-   * @param {string[]} characterSet - 使用文字セット
-   * @returns {Object} 統計情報
-   */
-  getTextStatistics(text, characterSet = null) {
-    const defaultCharacterSet = [
-      ...JapaneseCaesarCipher.AIUEO, 
-      ...JapaneseCaesarCipher.IROHA
-    ];
-    
-    const targetCharacterSet = characterSet || defaultCharacterSet;
-    const targetCount = [...text].filter(char => 
-      targetCharacterSet.includes(char)
-    ).length;
-    
-    return {
-      totalChars: text.length,
-      targetChars: targetCount,
-      otherChars: text.length - targetCount,
-      characterSetSize: targetCharacterSet.length
-    };
-  }
 }
 
 // アプリケーション初期化
 document.addEventListener('DOMContentLoaded', () => {
   try {
     new JapaneseCaesarCipher();
-    console.log('日本語シーザー暗号ツールが初期化されました。');
   } catch (error) {
     console.error('初期化エラー:', error);
 
     // 安全なエラー表示: DOM要素を直接作成
     const container = document.createElement('div');
-    container.style.cssText = 'padding: 20px; text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb;';
+    container.className = 'initialization-error';
 
     const heading = document.createElement('h1');
     heading.textContent = 'エラー';
