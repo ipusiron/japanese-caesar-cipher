@@ -1,0 +1,7 @@
+{
+  "name": "japanese-caesar-cipher",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}
