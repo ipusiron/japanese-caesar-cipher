@@ -490,3 +490,18 @@ button:focus-visible, summary:focus-visible {
     transform: none;
   }
 }
+
+/* 言語の切り替え。見出しの右に置く */
+.header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lang-btn {
+  width: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 6px 14px;
+}

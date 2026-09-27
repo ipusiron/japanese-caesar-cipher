@@ -7,74 +7,76 @@
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <meta name="description" content="ひらがな専用のシーザー暗号ツール。あいうえお順・いろは順・任意の文字順序で暗号化と復号ができる">
+  <meta name="description" data-i18n-content="app.description" content="ひらがな専用のシーザー暗号ツール。あいうえお順・いろは順・任意の文字順序で暗号化と復号ができる">
   <title>日本語シーザー暗号（Japanese Caesar Cipher）</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <noscript>このツールの利用にはJavaScriptが必要です。</noscript>
+  <noscript>This tool needs JavaScript. / このツールの利用にはJavaScriptが必要です。</noscript>
   <div class="container">
     <!-- ヘッダーカード -->
     <div class="header-card">
-      <h1>日本語シーザー暗号ツール（Japanese Caesar Cipher）</h1>
+      <h1 data-i18n="app.heading">日本語シーザー暗号ツール（Japanese Caesar Cipher）</h1>
+      <button type="button" id="langToggle" class="secondary-btn lang-btn"
+        data-i18n="app.langButton" data-i18n-aria-label="app.langAria" aria-label="言語を切り替える">English</button>
     </div>
 
     <!-- メイングリッド -->
     <div class="grid">
       <!-- 設定カード -->
       <div class="card">
-        <h2 class="card-header">⚙️ 設定</h2>
+        <h2 class="card-header" data-i18n="settings.header">⚙️ 設定</h2>
         
         <div class="form-group">
-          <label for="mode">モード:</label>
+          <label for="mode" data-i18n="settings.mode">モード:</label>
           <select id="mode">
-            <option value="encrypt">🔒 暗号化</option>
-            <option value="decrypt">🔓 復号</option>
+            <option value="encrypt" data-i18n="mode.encrypt">🔒 暗号化</option>
+            <option value="decrypt" data-i18n="mode.decrypt">🔓 復号</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="order">並び順:</label>
+          <label for="order" data-i18n="settings.order">並び順:</label>
           <select id="order">
-            <option value="aiueo">あいうえお順</option>
-            <option value="iroha">いろは順</option>
-            <option value="custom">任意</option>
+            <option value="aiueo" data-i18n="order.aiueo">あいうえお順</option>
+            <option value="iroha" data-i18n="order.iroha">いろは順</option>
+            <option value="custom" data-i18n="order.custom">任意</option>
           </select>
           
           <div id="customOrderContainer" class="custom-order-container" hidden>
-            <label for="customOrder">文字順序:</label>
-            <input type="text" id="customOrder" maxlength="1000" placeholder="例: あかさたなはまやらわ">
-            <small class="help-text">
+            <label for="customOrder" data-i18n="settings.customOrder">文字順序:</label>
+            <input type="text" id="customOrder" maxlength="1000" data-i18n-placeholder="settings.customPlaceholder" placeholder="例: あかさたなはまやらわ">
+            <small class="help-text" data-i18n="settings.customHint">
               使用したい文字を重複なく並べて入力してください
             </small>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="key">鍵（シフト数）:</label>
+          <label for="key" data-i18n="settings.key">鍵（シフト数）:</label>
           <input type="number" id="key" value="3" min="0" max="45" step="1">
         </div>
       </div>
 
       <!-- 入力カード -->
       <div class="card">
-        <h2 class="card-header">📝 入力</h2>
+        <h2 class="card-header" data-i18n="input.header">📝 入力</h2>
         
         <div class="form-group">
-          <label for="input">入力テキスト（複数行可）:</label>
-          <textarea id="input" maxlength="100000" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea>
+          <label for="input" data-i18n="input.label">入力テキスト（複数行可）:</label>
+          <textarea id="input" maxlength="100000" data-i18n-placeholder="input.placeholder" placeholder="ここに暗号化/復号したいテキストを入力してください"></textarea>
           
           <div class="stats-container">
-            <span class="stat-item">総文字数: <span class="stat-number" id="totalChars">0</span></span>
-            <span class="stat-item">変換対象: <span class="stat-number" id="targetChars">0</span></span>
-            <span class="stat-item">変換対象外: <span class="stat-number" id="otherChars">0</span></span>
+            <span class="stat-item"><span data-i18n="stats.total">総文字数:</span> <span class="stat-number" id="totalChars">0</span></span>
+            <span class="stat-item"><span data-i18n="stats.target">変換対象:</span> <span class="stat-number" id="targetChars">0</span></span>
+            <span class="stat-item"><span data-i18n="stats.other">変換対象外:</span> <span class="stat-number" id="otherChars">0</span></span>
           </div>
         </div>
 
-        <button id="processBtn">🚀 実行</button>
+        <button id="processBtn" data-i18n="button.process">🚀 実行</button>
         
         <div class="button-group">
-          <button type="button" id="clearBtn" class="secondary-btn">🗑️ すべてクリア</button>
+          <button type="button" id="clearBtn" class="secondary-btn" data-i18n="button.clear">🗑️ すべてクリア</button>
         </div>
         
         <div id="errorMessage" class="error" role="alert" hidden></div>
@@ -83,29 +85,29 @@
 
     <!-- 出力カード（フル幅） -->
     <div class="card full-width-card">
-      <h2 class="card-header">📤 出力結果</h2>
+      <h2 class="card-header" data-i18n="output.header">📤 出力結果</h2>
       
       <div class="form-group">
-        <label for="output">出力:</label>
-        <textarea id="output" readonly placeholder="結果がここに表示されます"></textarea>
+        <label for="output" data-i18n="output.label">出力:</label>
+        <textarea id="output" readonly data-i18n-placeholder="output.placeholder" placeholder="結果がここに表示されます"></textarea>
         
         <div class="button-group">
-          <button type="button" id="copyBtn" class="secondary-btn">📋 結果をコピー</button>
+          <button type="button" id="copyBtn" class="secondary-btn" data-i18n="button.copy">📋 結果をコピー</button>
         </div>
       </div>
     </div>
 
     <!-- 対応表カード（フル幅） -->
     <div class="card full-width-card">
-      <h2 class="card-header">📊 暗号表（対応表）</h2>
+      <h2 class="card-header" data-i18n="table.header">📊 暗号表（対応表）</h2>
       
       <div class="table-container">
         <table id="mappingTable">
           <caption class="visually-hidden"></caption>
           <thead>
             <tr>
-              <th scope="col">平文文字</th>
-              <th scope="col">暗号文文字</th>
+              <th scope="col" id="thPlain">平文文字</th>
+              <th scope="col" id="thCipher">暗号文文字</th>
             </tr>
           </thead>
           <tbody>
@@ -117,21 +119,21 @@
     <!-- セキュリティ注意書き -->
     <div class="card full-width-card">
       <div class="security-notice">
-        <strong>🔒 セキュリティに関する注意:</strong>
-        このツールは教育・学習目的で作成されています。重要な機密情報の保護には使用しないでください。
-        古典暗号は現代の暗号学的標準を満たしておらず、容易に解読される可能性があります。
+        <strong data-i18n="security.title">🔒 セキュリティに関する注意:</strong>
+        <span data-i18n="security.body">このツールは教育・学習目的で作成されています。重要な機密情報の保護には使用しないでください。古典暗号は現代の暗号学的標準を満たしておらず、容易に解読される可能性があります。</span>
       </div>
       
       <details class="shortcut-details">
-        <summary class="shortcut-summary">⌨️ キーボードショートカット</summary>
+        <summary class="shortcut-summary" data-i18n="shortcut.summary">⌨️ キーボードショートカット</summary>
         <div class="shortcut-content">
-          <p><kbd>Ctrl</kbd> + <kbd>Enter</kbd>（Macは<kbd>⌘</kbd> + <kbd>Enter</kbd>）: 暗号化/復号実行</p>
+          <p><kbd>Ctrl</kbd> + <kbd>Enter</kbd><span data-i18n="shortcut.runPrefix">（Macは</span><kbd>⌘</kbd> + <kbd>Enter</kbd><span data-i18n="shortcut.runSuffix">）: 暗号化/復号実行</span></p>
         </div>
       </details>
     </div>
   </div>
 
   <div id="statusMessage" class="toast" role="status" aria-live="polite"></div>
+  <script src="i18n.js"></script>
   <script src="cipher.js"></script>
   <script src="script.js"></script>
 </body>

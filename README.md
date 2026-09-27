@@ -39,6 +39,8 @@ hub: true
 
 # Japanese Caesar Cipher - ひらがな専用シーザー暗号ツール
 
+[English](README.en.md) · 日本語
+
 ![GitHub Repo stars](https://img.shields.io/github/stars/ipusiron/japanese-caesar-cipher?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/ipusiron/japanese-caesar-cipher?style=social)
 ![GitHub last commit](https://img.shields.io/github/last-commit/ipusiron/japanese-caesar-cipher)
@@ -87,6 +89,7 @@ hub: true
 - **複数行入力**：改行を含む文章に対応
 - **変換対象外の保持**：既定の並び順では、ひらがな以外の記号・漢字・カタカナなどをそのまま出力
 - **ブラウザー内で完結**：インストール不要
+- **日本語・英語の切り替え**：右上のボタン、`?lang=en`、ブラウザーの言語設定のいずれでも切り替わる
 
 ---
 
@@ -171,7 +174,7 @@ READMEの使い方の例・文字セット・画像参照・YAML構造、配色�
 
 ## 🔒 セキュリティ・プライバシー
 
-アプリは外部への通信を追加せず、入力内容を保存しません。localStorage・Cookieも使いません。
+アプリは外部への通信を追加せず、入力内容を保存しません。localStorageに保存するのは言語の選択だけで、Cookieは使いません。
 入力値は`textContent`と`value`にだけ設定するため、HTMLエスケープは不要です。
 エスケープや文字列の除去、前後の空白を削った値の書き戻しは行いません。
 「すべてクリア」を押した場合のみ、入力・出力・カスタム順序の欄を空にします。
@@ -196,14 +199,17 @@ japanese-caesar-cipher/
 │   ├── readme.test.js    # READMEの例・文字セット・画像・YAML
 │   ├── html.test.js      # HTMLとDOM処理の静的条件
 │   ├── contrast.test.js  # ライト・ダークの配色
+│   ├── i18n.test.js      # 日本語・英語の辞書の対応
 │   └── format.test.js    # 最長行と行数
 ├── cipher.js             # DOMに依存しない暗号ロジック
+├── i18n.js               # 日本語・英語の文言（UI側は文字列を持たない）
 ├── index.html            # 画面の構造
 ├── script.js             # 画面の描画とイベント処理
 ├── style.css             # 表示と配色
 ├── package.json          # 依存なしのテストコマンド
 ├── CLAUDE.md             # 開発ガイド
 ├── README.md             # 本ドキュメント
+├── README.en.md          # 英語版
 ├── LICENSE               # MITライセンス
 ├── .gitignore            # Gitの除外指定
 └── .nojekyll             # GitHub PagesのJekyll処理を無効化
