@@ -18,7 +18,7 @@ test('HTML: viewport・CSP・referrer・noscript', () => {
 
 test('HTML: 古典スクリプトの読込順・インラインコード禁止', () => {
   const scripts = html.match(/<script\b[^>]*>/g) || [];
-  assert.equal(scripts.length, 2);
+  assert.equal(scripts.length, 3); // i18n.js + cipher.js + script.js
   assert.ok(scripts.every(tag => !/type\s*=\s*["']module["']/.test(tag)));
   assert.ok(html.indexOf('<script src="cipher.js">') >= 0);
   assert.ok(html.indexOf('<script src="cipher.js">') < html.indexOf('<script src="script.js">'));

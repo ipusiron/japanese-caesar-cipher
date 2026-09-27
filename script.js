@@ -1,3 +1,6 @@
+// 文言は i18n.js が持つ。ここには言語ごとの文字列を置かない
+const t = (key, values) => I18n.t(key, values);
+
 /**
  * 日本語シーザー暗号ツール - JavaScript
  * @version 1.0.0
@@ -49,6 +52,40 @@ class JapaneseCaesarCipher {
   }
 
   /**
+   * 実行ボタンの状態を切り替える。
+   * 文言を直に書き戻すと、その1秒のあいだに言語を変えたときに元の言語へ戻ってしまう。
+   * 状態だけを持ち、文言は毎回 t() から組み立てる。
+   * @param {'idle' | 'done'} state
+   * @private
+   */
+  setProcessButton(state) {
+    this.elements.processBtn.dataset.state = state;
+    this.elements.processBtn.textContent = t(state === 'done' ? 'button.done' : 'button.process');
+  }
+
+  /**
+   * コピーボタンの状態を切り替える（理由は setProcessButton と同じ）
+   * @param {'idle' | 'copied'} state
+   * @private
+   */
+  setCopyButton(state) {
+    this.elements.copyBtn.dataset.state = state;
+    this.elements.copyBtn.textContent = t(state === 'copied' ? 'button.copied' : 'button.copy');
+  }
+
+  /**
+   * 言語を変えたときに、スクリプトが書き込んだ文言を訳し直す。
+   * apply() は data-i18n の付いた要素しか見ないため、
+   * 状態によって変わるボタンと対応表はここで組み立て直す。
+   * @private
+   */
+  retranslate() {
+    this.setProcessButton(this.elements.processBtn.dataset.state || 'idle');
+    this.setCopyButton(this.elements.copyBtn.dataset.state || 'idle');
+    this.updateTableOnInput();
+  }
+
+  /**
    * 常設の通知領域を更新（前の通知タイマーは取り消す）
    * @param {string} message - 通知内容
    * @param {'warning' | 'success'} type - 通知種別
@@ -82,13 +119,13 @@ class JapaneseCaesarCipher {
       this.updateCharacterCount();
       this.updateTableOnInput();
       clearTimeout(this.processTimer);
-      this.elements.processBtn.textContent = '🚀 実行';
+      this.setProcessButton('idle');
 
       // フォーカスを入力欄に移動
       this.elements.input.focus();
-      this.showSuccess('すべてクリアしました');
+      this.showSuccess(t('msg.cleared'));
     } catch (error) {
-      this.showError('クリア中にエラーが発生しました');
+      this.showError(t('msg.clearError'));
     }
   }
 
@@ -100,24 +137,24 @@ class JapaneseCaesarCipher {
     try {
       const outputText = this.elements.output.value;
       if (!outputText || outputText.trim() === '') {
-        this.showWarning('コピーする内容がありません');
+        this.showWarning(t('msg.nothingToCopy'));
         return;
       }
 
       // クリップボードAPI使用
       await navigator.clipboard.writeText(outputText);
-      this.showSuccess('結果をクリップボードにコピーしました');
+      this.showSuccess(t('msg.copied'));
 
       // コピーボタンの視覚的フィードバック
       clearTimeout(this.copyTimer);
-      this.elements.copyBtn.textContent = '✅ コピー完了';
+      this.setCopyButton('copied');
       this.elements.copyBtn.classList.add('copy-success');
       this.copyTimer = setTimeout(() => {
-        this.elements.copyBtn.textContent = '📋 結果をコピー';
+        this.setCopyButton('idle');
         this.elements.copyBtn.classList.remove('copy-success');
       }, 2000);
     } catch (error) {
-      this.showWarning('コピーできませんでした。出力欄を選択してコピーしてください。');
+      this.showWarning(t('msg.copyFailed'));
       this.elements.output.focus();
       this.elements.output.select();
     }
@@ -188,6 +225,14 @@ class JapaneseCaesarCipher {
         }
       });
     });
+
+    const langToggle = document.getElementById('langToggle');
+    if (langToggle) {
+      langToggle.addEventListener('click', () => {
+        I18n.setLanguage(I18n.language === 'ja' ? 'en' : 'ja');
+      });
+    }
+    document.addEventListener('languagechange', () => this.retranslate());
   }
 
   /**
@@ -240,11 +285,11 @@ class JapaneseCaesarCipher {
     const result = JapaneseCaesar.parseOrder(customOrder);
     if (!result.ok) {
       const messages = {
-        EMPTY: 'カスタム文字順序が入力されていません。',
-        TOO_SHORT: 'カスタム文字順序は2文字以上である必要があります。',
-        WHITESPACE: 'カスタム文字順序に空白文字は使用できません。',
-        CONTROL: 'カスタム文字順序に制御文字が含まれています。',
-        DUPLICATE: 'カスタム文字順序に重複した文字が含まれています。'
+        EMPTY: t('validate.customEmpty'),
+        TOO_SHORT: t('validate.customShort'),
+        WHITESPACE: t('validate.customSpace'),
+        CONTROL: t('validate.customControl'),
+        DUPLICATE: t('validate.customDuplicate')
       };
       this.showError(messages[result.code], this.elements.customOrder);
       return false;
@@ -270,15 +315,15 @@ class JapaneseCaesarCipher {
       return false;
     }
     if (rawKey.trim() === '' || !Number.isFinite(key)) {
-      this.showError('鍵（シフト数）は数値である必要があります。', this.elements.key);
+      this.showError(t('validate.keyNumber'), this.elements.key);
       return false;
     }
     if (!Number.isInteger(key)) {
-      this.showError('鍵（シフト数）は整数である必要があります。', this.elements.key);
+      this.showError(t('validate.keyInteger'), this.elements.key);
       return false;
     }
     if (key < 0) {
-      this.showError('鍵（シフト数）は0以上である必要があります。', this.elements.key);
+      this.showError(t('validate.keyMin'), this.elements.key);
       return false;
     }
 
@@ -286,7 +331,7 @@ class JapaneseCaesarCipher {
     if (key > maxKey) {
       const orderName = this.elements.order.selectedOptions[0].textContent;
       this.showError(
-        `鍵（シフト数）は${maxKey}以下である必要があります（${orderName}は${chars.length}文字）。`,
+        t('validate.keyMax', { max: maxKey, order: orderName, count: chars.length }),
         this.elements.key
       );
       return false;
@@ -340,15 +385,15 @@ class JapaneseCaesarCipher {
 
       // 処理成功のフィードバック（ボタンは無効にせずフォーカスを維持）
       clearTimeout(this.processTimer);
-      this.elements.processBtn.textContent = '✅ 完了!';
-      this.showSuccess(mode === 'encrypt' ? '暗号化しました' : '復号しました');
+      this.setProcessButton('done');
+      this.showSuccess(t(mode === 'encrypt' ? 'msg.encrypted' : 'msg.decrypted'));
       this.processTimer = setTimeout(() => {
-        this.elements.processBtn.textContent = '🚀 実行';
+        this.setProcessButton('idle');
       }, 1000);
     } catch (error) {
-      this.showError(`処理中にエラーが発生しました: ${error.message}`);
+      this.showError(t('msg.processError', { message: error.message }));
       clearTimeout(this.processTimer);
-      this.elements.processBtn.textContent = '🚀 実行';
+      this.setProcessButton('idle');
     }
   }
 
@@ -386,21 +431,21 @@ class JapaneseCaesarCipher {
   updateTableOnInput() {
     const mode = this.elements.mode.value;
     const headers = this.elements.mappingTable.querySelectorAll('th');
-    headers[0].textContent = mode === 'encrypt' ? '平文文字' : '暗号文文字';
-    headers[1].textContent = mode === 'encrypt' ? '暗号文文字' : '平文文字';
+    headers[0].textContent = t(mode === 'encrypt' ? 'table.plain' : 'table.cipher');
+    headers[1].textContent = t(mode === 'encrypt' ? 'table.cipher' : 'table.plain');
     const caption = this.elements.mappingTable.querySelector('caption');
 
     if (!this.validateInput()) {
       this.elements.mappingTable.querySelector('tbody').replaceChildren();
-      caption.textContent = '設定が無効なため対応表を表示できません。';
+      caption.textContent = t('table.unavailable');
       return;
     }
 
     const order = this.elements.order.value;
     const key = Number(this.elements.key.value);
     const orderName = this.elements.order.selectedOptions[0].textContent;
-    const modeName = mode === 'encrypt' ? '暗号化' : '復号';
-    caption.textContent = `${orderName}・鍵${key}・${modeName}の対応表`;
+    const modeName = t(mode === 'encrypt' ? 'mode.encryptPlain' : 'mode.decryptPlain');
+    caption.textContent = t('table.caption', { order: orderName, key, mode: modeName });
     const base = this.getCharacterArray(order);
     this.updateTable(base, key, mode);
   }
@@ -410,20 +455,22 @@ class JapaneseCaesarCipher {
 // アプリケーション初期化
 document.addEventListener('DOMContentLoaded', () => {
   try {
+    // 画面を組み立てる前に言語を決める。以降 t() が正しい辞書を引く
+    I18n.init();
     new JapaneseCaesarCipher();
   } catch (error) {
-    console.error('初期化エラー:', error);
+    console.error('Initialization failed:', error); // コンソールは開発者向けなので訳さない
 
     // 安全なエラー表示: DOM要素を直接作成
     const container = document.createElement('div');
     container.className = 'initialization-error';
 
     const heading = document.createElement('h1');
-    heading.textContent = 'エラー';
+    heading.textContent = I18n.t('msg.errorLabel');
     container.appendChild(heading);
 
     const message = document.createElement('p');
-    message.textContent = `アプリケーションの初期化に失敗しました: ${error.message}`;
+    message.textContent = I18n.t('msg.initError', { message: error.message });
     container.appendChild(message);
 
     document.body.textContent = ''; // 既存コンテンツをクリア
