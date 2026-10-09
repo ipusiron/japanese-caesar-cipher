@@ -63,3 +63,16 @@ test('READMEのYAMLはHTMLコメント内のブロック形式と識別値を保
     assert.equal(value, expected, key);
   }
 });
+
+test('UC: ならではの使い方を cipher.js で再計算', () => {
+  assert.equal(shiftText('あ', AIUEO, 1), 'い');
+  assert.equal(shiftText('あいう', AIUEO, 46), 'あいう');
+  assert.equal(shiftText('いろは', IROHA, 48), 'いろは');
+  assert.equal(shiftText('いろは', IROHA, 46), 'すんい');
+  assert.equal(AIUEO.length, 46);
+  assert.equal(IROHA.length, 48);
+  const en = fs.readFileSync(path.join(root, 'README.en.md'), 'utf8');
+  for (const md of [readme, en]) {
+    assert.ok(md.includes('46') && md.includes('48'));
+  }
+});
